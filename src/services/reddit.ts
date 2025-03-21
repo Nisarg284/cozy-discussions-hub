@@ -48,8 +48,8 @@ interface RedditApiResponse {
 }
 
 export const getAuthUrl = (): string => {
-  // Use an exact URI that matches what's configured in Reddit's app settings
-  const redirectUri = window.location.origin + "/auth";
+  // Use the exact URI that's registered in the Reddit app settings
+  const redirectUri = "http://localhost:8080/redirect";
   console.log("Using redirect URI:", redirectUri);
   
   const params = new URLSearchParams({

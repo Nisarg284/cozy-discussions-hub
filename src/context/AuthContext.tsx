@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -90,7 +91,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (code: string): Promise<void> => {
     try {
       setIsLoading(true);
-      const redirectUri = window.location.origin + "/auth";
+      // Use the exact redirect URI that's registered in Reddit app settings
+      const redirectUri = "http://localhost:8080/redirect";
       console.log("Login with redirect URI:", redirectUri);
       
       const response = await fetch("https://www.reddit.com/api/v1/access_token", {
