@@ -48,14 +48,13 @@ const AuthButton = () => {
   }
 
   return (
-    <Button
-      as="a"
+    <a
       href={getAuthUrl()}
-      className="flex items-center space-x-2 rounded-full px-5 animate-fade-in"
+      className="flex items-center space-x-2 rounded-full px-5 animate-fade-in bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 text-sm font-medium"
     >
       <LogIn className="h-4 w-4" />
       <span>Sign In</span>
-    </Button>
+    </a>
   );
 };
 
