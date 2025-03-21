@@ -48,11 +48,15 @@ interface RedditApiResponse {
 }
 
 export const getAuthUrl = (): string => {
+  // Use an exact URI that matches what's configured in Reddit's app settings
+  const redirectUri = window.location.origin + "/auth";
+  console.log("Using redirect URI:", redirectUri);
+  
   const params = new URLSearchParams({
     client_id: REDDIT_CLIENT_ID,
     response_type: "code",
     state: Math.random().toString(36).substring(2, 15),
-    redirect_uri: `${window.location.origin}/auth`,
+    redirect_uri: redirectUri,
     duration: "permanent",
     scope: "identity read vote submit subscribe history",
   });

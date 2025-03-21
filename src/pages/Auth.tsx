@@ -31,6 +31,7 @@ const Auth = () => {
           return;
         }
 
+        console.log("Auth page received code:", code.substring(0, 5) + "...");
         await login(code);
         setStatus("success");
         
@@ -38,9 +39,9 @@ const Auth = () => {
         setTimeout(() => {
           navigate("/");
         }, 1500);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Authentication error:", err);
-        setError("Failed to authenticate with Reddit");
+        setError(err?.message || "Failed to authenticate with Reddit");
         setStatus("error");
       }
     };

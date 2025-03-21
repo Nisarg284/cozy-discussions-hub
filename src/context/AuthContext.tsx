@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -33,28 +32,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load auth data from localStorage
     const storedAuth = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (storedAuth) {
       try {
         const parsedAuth = JSON.parse(storedAuth) as AuthState;
         
-        // Check if the token is expired
         if (parsedAuth.expiresAt && parsedAuth.expiresAt > Date.now()) {
           setAuthState(parsedAuth);
           setIsLoading(false);
         } else if (parsedAuth.refreshToken) {
-          // Token expired but we have a refresh token
           refreshAccessToken(parsedAuth.refreshToken)
             .then(success => {
               if (!success) {
-                // If refresh failed, clear storage
                 localStorage.removeItem(LOCAL_STORAGE_KEY);
               }
               setIsLoading(false);
             });
         } else {
-          // No valid tokens, clear storage
           localStorage.removeItem(LOCAL_STORAGE_KEY);
           setIsLoading(false);
         }
@@ -68,7 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save auth state to localStorage whenever it changes
   useEffect(() => {
     if (authState.isAuthenticated && authState.accessToken) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(authState));
@@ -77,15 +70,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [authState]);
 
-  // Auto refresh token before it expires
   useEffect(() => {
     if (!authState.expiresAt || !authState.isAuthenticated) return;
     
-    // Refresh 5 minutes before expiration
     const timeUntilRefresh = authState.expiresAt - Date.now() - (5 * 60 * 1000);
     
     if (timeUntilRefresh <= 0) {
-      // Token is already expired or about to expire, refresh now
       refreshAccessToken();
       return;
     }
@@ -100,7 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (code: string): Promise<void> => {
     try {
       setIsLoading(true);
-      // Exchange code for tokens
+      const redirectUri = window.location.origin + "/auth";
+      console.log("Login with redirect URI:", redirectUri);
+      
       const response = await fetch("https://www.reddit.com/api/v1/access_token", {
         method: "POST",
         headers: {
@@ -110,17 +102,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
-          redirect_uri: window.location.origin + "/auth",
+          redirect_uri: redirectUri,
         }).toString(),
       });
 
       if (!response.ok) {
-        throw new Error(`Reddit API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error("Reddit API error:", response.status, errorText);
+        throw new Error(`Reddit API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       
-      // Get user info
       const userResponse = await fetch("https://oauth.reddit.com/api/v1/me", {
         headers: {
           Authorization: `Bearer ${data.access_token}`,
@@ -182,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newState = {
         isAuthenticated: true,
         accessToken: data.access_token,
-        refreshToken: data.refresh_token || refreshToken, // Use new refresh token if provided
+        refreshToken: data.refresh_token || refreshToken,
         expiresAt,
         username: authState.username,
       };
