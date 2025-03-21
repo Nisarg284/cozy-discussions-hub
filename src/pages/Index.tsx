@@ -2,15 +2,32 @@
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import PostList from "@/components/PostList";
+import PersonalizedFeed from "@/components/PersonalizedFeed";
+import SubscribedSubreddits from "@/components/SubscribedSubreddits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowUp, Flame, Clock, TrendingUp, Award, Shield, Info } from "lucide-react";
+import { ArrowUp, Flame, Clock, TrendingUp, Award, Shield, Info, Sparkles } from "lucide-react";
 
 const Index = () => {
-  const [sort, setSort] = useState<"hot" | "new" | "top" | "rising">("hot");
+  const [feedType, setFeedType] = useState<"home" | "all">("home");
+  const [sort, setSort] = useState<"hot" | "new" | "top" | "rising" | "best">("hot");
   const { isAuthenticated } = useAuth();
+
+  const handleSortChange = (value: string) => {
+    setSort(value as any);
+  };
+
+  const handleFeedTypeChange = (type: "home" | "all") => {
+    setFeedType(type);
+    // Reset to default sort for each feed type
+    if (type === "home" && isAuthenticated) {
+      setSort("best");
+    } else {
+      setSort("hot");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#DAE0E6]">
@@ -21,11 +38,44 @@ const Index = () => {
           {/* Main content */}
           <div className="flex-1">
             <Card className="bg-white mb-4 p-2 border border-border/60">
+              <div className="flex mb-2 border-b border-border/60">
+                <button
+                  onClick={() => handleFeedTypeChange("home")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                    feedType === "home" 
+                      ? "border-reddit-blue text-reddit-blue" 
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => handleFeedTypeChange("all")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                    feedType === "all" 
+                      ? "border-reddit-blue text-reddit-blue" 
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  All
+                </button>
+              </div>
+
               <Tabs 
-                defaultValue="hot" 
-                onValueChange={(value) => setSort(value as any)}
+                defaultValue={isAuthenticated && feedType === "home" ? "best" : "hot"} 
+                value={sort}
+                onValueChange={handleSortChange}
               >
                 <TabsList className="bg-transparent w-full justify-start gap-1 h-auto p-0">
+                  {isAuthenticated && feedType === "home" && (
+                    <TabsTrigger 
+                      value="best" 
+                      className="rounded-md data-[state=active]:bg-muted/50 h-8 px-3 text-sm"
+                    >
+                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      Best
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger 
                     value="hot" 
                     className="rounded-md data-[state=active]:bg-muted/50 h-8 px-3 text-sm"
@@ -56,20 +106,42 @@ const Index = () => {
                   </TabsTrigger>
                 </TabsList>
                 
+                {isAuthenticated && feedType === "home" && (
+                  <TabsContent value="best">
+                    <PersonalizedFeed sort="best" />
+                  </TabsContent>
+                )}
+                
                 <TabsContent value="hot">
-                  <PostList sort="hot" />
+                  {feedType === "home" && isAuthenticated ? (
+                    <PersonalizedFeed sort="hot" />
+                  ) : (
+                    <PostList sort="hot" />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="new">
-                  <PostList sort="new" />
+                  {feedType === "home" && isAuthenticated ? (
+                    <PersonalizedFeed sort="new" />
+                  ) : (
+                    <PostList sort="new" />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="top">
-                  <PostList sort="top" />
+                  {feedType === "home" && isAuthenticated ? (
+                    <PersonalizedFeed sort="top" />
+                  ) : (
+                    <PostList sort="top" />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="rising">
-                  <PostList sort="rising" />
+                  {feedType === "home" && isAuthenticated ? (
+                    <PersonalizedFeed sort="rising" />
+                  ) : (
+                    <PostList sort="rising" />
+                  )}
                 </TabsContent>
               </Tabs>
             </Card>
@@ -77,6 +149,8 @@ const Index = () => {
           
           {/* Sidebar */}
           <div className="md:w-80 space-y-4">
+            {isAuthenticated && <SubscribedSubreddits />}
+            
             <Card className="p-4 border border-border/60 bg-white overflow-hidden">
               <div className="bg-reddit-blue h-10 -mx-4 -mt-4 mb-4"></div>
               <h2 className="text-base font-semibold mb-4">About Reddit</h2>

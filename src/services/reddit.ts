@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/context/AuthContext";
 
 export const REDDIT_CLIENT_ID = "GmoAXMWDLSWvCevwNKB7hQ";
@@ -33,6 +32,15 @@ export interface RedditComment {
   replies?: RedditComment[];
   depth: number;
   liked: boolean | null;
+}
+
+export interface Subreddit {
+  name: string;
+  display_name: string;
+  subscribers: number;
+  icon_img: string;
+  user_is_subscriber?: boolean;
+  description?: string;
 }
 
 interface RedditApiResponse {
@@ -160,6 +168,109 @@ export const useRedditApi = () => {
       };
     } catch (error) {
       console.error("Failed to fetch posts:", error);
+      throw error;
+    }
+  };
+
+  const getPersonalizedFeed = async (
+    sort: "best" | "hot" | "new" | "top" | "rising" = "best",
+    after?: string,
+    limit: number = 25
+  ): Promise<{ posts: RedditPost[]; after: string | null }> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required for personalized feed");
+    }
+    
+    const params = new URLSearchParams();
+    if (after) params.set("after", after);
+    params.set("limit", limit.toString());
+    params.set("raw_json", "1");
+    
+    const url = `https://oauth.reddit.com/${sort}?${params.toString()}`;
+    
+    try {
+      const response = await fetchWithAuth(url);
+      
+      if (!response.ok) {
+        throw new Error(`Reddit API error: ${response.status}`);
+      }
+      
+      const data: RedditApiResponse = await response.json();
+      
+      const posts = data.data.children.map(child => {
+        const post = child.data;
+        return {
+          id: post.id,
+          title: post.title,
+          author: post.author,
+          subreddit: post.subreddit,
+          created: post.created_utc,
+          score: post.score,
+          num_comments: post.num_comments,
+          url: post.url,
+          permalink: post.permalink,
+          selftext: post.selftext,
+          is_self: post.is_self,
+          thumbnail: post.thumbnail,
+          upvote_ratio: post.upvote_ratio,
+          is_video: post.is_video,
+          liked: post.likes,
+          media: post.media,
+          preview: post.preview,
+        };
+      });
+      
+      return {
+        posts,
+        after: data.data.after,
+      };
+    } catch (error) {
+      console.error("Failed to fetch personalized feed:", error);
+      throw error;
+    }
+  };
+
+  const getSubscribedSubreddits = async (
+    limit: number = 25,
+    after?: string
+  ): Promise<{ subreddits: Subreddit[]; after: string | null }> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to get subscribed subreddits");
+    }
+    
+    const params = new URLSearchParams();
+    if (after) params.set("after", after);
+    params.set("limit", limit.toString());
+    
+    const url = `https://oauth.reddit.com/subreddits/mine/subscriber?${params.toString()}`;
+    
+    try {
+      const response = await fetchWithAuth(url);
+      
+      if (!response.ok) {
+        throw new Error(`Reddit API error: ${response.status}`);
+      }
+      
+      const data: RedditApiResponse = await response.json();
+      
+      const subreddits = data.data.children.map(child => {
+        const subreddit = child.data;
+        return {
+          name: subreddit.name,
+          display_name: subreddit.display_name,
+          subscribers: subreddit.subscribers,
+          icon_img: subreddit.icon_img || '',
+          user_is_subscriber: true,
+          description: subreddit.public_description,
+        };
+      });
+      
+      return {
+        subreddits,
+        after: data.data.after,
+      };
+    } catch (error) {
+      console.error("Failed to fetch subscribed subreddits:", error);
       throw error;
     }
   };
@@ -313,9 +424,12 @@ export const useRedditApi = () => {
 
   return {
     getPosts,
+    getPersonalizedFeed,
     getComments,
     vote,
     getSubreddits,
+    getSubscribedSubreddits,
     subscribeToSubreddit
   };
 };
+
