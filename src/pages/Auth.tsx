@@ -1,12 +1,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const Auth = () => {
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -20,54 +21,88 @@ const Auth = () => {
 
         if (error) {
           setError(error);
-          setIsLoading(false);
+          setStatus("error");
           return;
         }
 
         if (!code) {
           setError("No authorization code received");
-          setIsLoading(false);
+          setStatus("error");
           return;
         }
 
         await login(code);
-        navigate("/");
+        setStatus("success");
+        
+        // Redirect after short delay to show success message
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
       } catch (err) {
         console.error("Authentication error:", err);
         setError("Failed to authenticate with Reddit");
-        setIsLoading(false);
+        setStatus("error");
       }
     };
 
     processAuth();
   }, [location, login, navigate]);
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="text-center max-w-md mx-auto p-6 rounded-lg">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-6" />
-          <h1 className="text-2xl font-semibold mb-3">Logging you in</h1>
-          <p className="text-muted-foreground">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAE0E6]">
+        <div className="text-center max-w-md mx-auto p-8 rounded-lg bg-white shadow-sm border border-gray-200">
+          <Loader2 className="h-12 w-12 animate-spin text-reddit-orange mx-auto mb-6" />
+          <h1 className="text-2xl font-semibold mb-3">Connecting to Reddit</h1>
+          <p className="text-muted-foreground mb-4">
             Please wait while we complete the authentication process...
+          </p>
+          <div className="space-y-2 text-sm text-left border-t border-gray-100 pt-4 mt-4">
+            <div className="flex items-center">
+              <Shield className="h-4 w-4 mr-2 text-green-500" />
+              <span>Authenticating securely with Reddit</span>
+            </div>
+            <div className="flex items-center">
+              <Shield className="h-4 w-4 mr-2 text-green-500" />
+              <span>Processing your credentials</span>
+            </div>
+            <div className="flex items-center">
+              <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-500" />
+              <span>Setting up your account</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAE0E6]">
+        <div className="text-center max-w-md mx-auto p-8 rounded-lg bg-white shadow-sm border border-gray-200">
+          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-6" />
+          <h1 className="text-2xl font-semibold mb-3">Successfully Signed In!</h1>
+          <p className="text-muted-foreground">
+            You're now authenticated with Reddit. Redirecting you to the homepage...
           </p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (status === "error") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="text-center max-w-md mx-auto p-6 rounded-lg border border-destructive/20 bg-destructive/5">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAE0E6]">
+        <div className="text-center max-w-md mx-auto p-8 rounded-lg border border-destructive/20 bg-destructive/5">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-6" />
           <h1 className="text-2xl font-semibold mb-3 text-destructive">Authentication Failed</h1>
           <p className="text-muted-foreground mb-6">{error}</p>
-          <button
+          <Button
             onClick={() => navigate("/")}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            className="bg-reddit-orange text-white hover:bg-reddit-orange/90"
           >
             Return to Home
-          </button>
+          </Button>
         </div>
       </div>
     );

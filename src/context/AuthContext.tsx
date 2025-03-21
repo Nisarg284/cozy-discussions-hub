@@ -15,6 +15,7 @@ interface AuthContextType extends AuthState {
   login: (code: string) => Promise<void>;
   logout: () => void;
   refreshAccessToken: () => Promise<string | null>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     expiresAt: null,
     username: null,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load auth data from localStorage
@@ -40,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check if the token is expired
         if (parsedAuth.expiresAt && parsedAuth.expiresAt > Date.now()) {
           setAuthState(parsedAuth);
+          setIsLoading(false);
         } else if (parsedAuth.refreshToken) {
           // Token expired but we have a refresh token
           refreshAccessToken(parsedAuth.refreshToken)
@@ -48,15 +51,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // If refresh failed, clear storage
                 localStorage.removeItem(LOCAL_STORAGE_KEY);
               }
+              setIsLoading(false);
             });
         } else {
           // No valid tokens, clear storage
           localStorage.removeItem(LOCAL_STORAGE_KEY);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Failed to parse auth data:", error);
         localStorage.removeItem(LOCAL_STORAGE_KEY);
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
@@ -69,8 +77,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [authState]);
 
+  // Auto refresh token before it expires
+  useEffect(() => {
+    if (!authState.expiresAt || !authState.isAuthenticated) return;
+    
+    // Refresh 5 minutes before expiration
+    const timeUntilRefresh = authState.expiresAt - Date.now() - (5 * 60 * 1000);
+    
+    if (timeUntilRefresh <= 0) {
+      // Token is already expired or about to expire, refresh now
+      refreshAccessToken();
+      return;
+    }
+    
+    const refreshTimer = setTimeout(() => {
+      refreshAccessToken();
+    }, timeUntilRefresh);
+    
+    return () => clearTimeout(refreshTimer);
+  }, [authState.expiresAt, authState.isAuthenticated]);
+
   const login = async (code: string): Promise<void> => {
     try {
+      setIsLoading(true);
       // Exchange code for tokens
       const response = await fetch("https://www.reddit.com/api/v1/access_token", {
         method: "POST",
@@ -114,11 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: userData.name,
       });
 
-      toast.success(`Logged in as ${userData.name}`);
+      toast.success(`Welcome back, ${userData.name}!`);
     } catch (error) {
       console.error("Login failed:", error);
       toast.error("Failed to log in with Reddit");
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const refreshToken = token || authState.refreshToken;
       if (!refreshToken) return null;
 
+      setIsLoading(true);
+      
       const response = await fetch("https://www.reddit.com/api/v1/access_token", {
         method: "POST",
         headers: {
@@ -160,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to refresh token:", error);
       logout();
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -171,7 +206,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       expiresAt: null,
       username: null,
     });
-    toast.info("Logged out");
+    toast.info("Logged out successfully");
   };
 
   return (
@@ -181,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         refreshAccessToken: () => refreshAccessToken(),
+        isLoading,
       }}
     >
       {children}

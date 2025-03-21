@@ -1,6 +1,6 @@
 
 import React from "react";
-import { LogIn, LogOut, User } from "lucide-react";
+import { LogIn, LogOut, User, ChevronDown, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -21,19 +21,44 @@ const AuthButton = () => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10 border border-border">
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {username[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+          <Button variant="ghost" className="flex items-center space-x-2 h-9 px-2 hover:bg-secondary/80 rounded-md">
+            <div className="flex items-center">
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="ml-2 text-left hidden md:block">
+                <p className="text-xs font-medium">{username}</p>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <span className="flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                    <span>Online</span>
+                  </span>
+                </div>
+              </div>
+              <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground hidden md:block" />
+            </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 animate-scale-in">
+        <DropdownMenuContent align="end" className="w-64 animate-scale-in">
           <DropdownMenuLabel className="flex flex-col">
-            <span>Signed in as</span>
-            <span className="font-bold text-sm">{username}</span>
+            <span className="text-xs text-muted-foreground">Logged in as</span>
+            <span className="font-bold">{username}</span>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>User Settings</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            <span>Help Center</span>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive cursor-pointer"
@@ -50,7 +75,7 @@ const AuthButton = () => {
   return (
     <a
       href={getAuthUrl()}
-      className="flex items-center space-x-2 rounded-full px-5 animate-fade-in bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 text-sm font-medium"
+      className="flex items-center space-x-2 rounded-full px-5 animate-fade-in bg-reddit-orange text-white hover:bg-reddit-orange/90 h-9 py-2 text-sm font-medium transition-colors"
     >
       <LogIn className="h-4 w-4" />
       <span>Sign In</span>
