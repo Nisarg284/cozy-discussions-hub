@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2, AlertTriangle, CheckCircle, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +21,14 @@ const Auth = () => {
         const error = params.get("error");
 
         if (error) {
+          console.error("OAuth error:", error);
           setError(error);
           setStatus("error");
           return;
         }
 
         if (!code) {
+          console.error("No authorization code received");
           setError("No authorization code received");
           setStatus("error");
           return;
@@ -38,6 +41,8 @@ const Auth = () => {
         // Get the redirect path if available, otherwise go to home
         const redirectTo = sessionStorage.getItem("redirectAfterAuth") || "/";
         sessionStorage.removeItem("redirectAfterAuth");
+        
+        toast.success("Successfully logged in!");
         
         // Redirect after short delay to show success message
         setTimeout(() => {

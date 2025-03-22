@@ -41,6 +41,7 @@ export interface Subreddit {
   icon_img: string;
   description?: string;
   user_is_subscriber?: boolean;
+  public_description?: string;
 }
 
 interface RedditApiResponse {
@@ -56,7 +57,6 @@ interface RedditApiResponse {
 }
 
 export const getAuthUrl = (): string => {
-  // Use the exact URI that's registered in the Reddit app settings
   const redirectUri = "http://localhost:8080/redirect";
   console.log("Using redirect URI:", redirectUri);
   
@@ -81,7 +81,6 @@ export const useRedditApi = () => {
   ): Promise<Response> => {
     let token = accessToken;
 
-    // Check if token needs refresh
     if (!token) {
       token = await refreshAccessToken();
       if (!token) {
@@ -97,7 +96,6 @@ export const useRedditApi = () => {
       headers,
     });
 
-    // Handle 401 by refreshing token and retrying once
     if (response.status === 401) {
       const newToken = await refreshAccessToken();
       if (newToken) {
@@ -293,7 +291,6 @@ export const useRedditApi = () => {
       
       const data = await response.json();
       
-      // The second element in the array contains comments
       if (!data[1] || !data[1].data || !data[1].data.children) {
         return [];
       }
@@ -307,7 +304,7 @@ export const useRedditApi = () => {
   
   const parseComments = (children: any[], depth = 0): RedditComment[] => {
     return children
-      .filter(child => child.kind === 't1') // Only include comments
+      .filter(child => child.kind === 't1')
       .map(child => {
         const comment = child.data;
         let replies: RedditComment[] = [];
@@ -344,7 +341,7 @@ export const useRedditApi = () => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          id: `t3_${id}`, // t3 prefix for posts
+          id: `t3_${id}`,
           dir: direction.toString(),
         }).toString(),
       });
@@ -360,7 +357,7 @@ export const useRedditApi = () => {
 
   const getSubreddits = async (
     query?: string
-  ): Promise<{ name: string; display_name: string; subscribers: number; icon_img: string }[]> => {
+  ): Promise<Subreddit[]> => {
     const baseUrl = isAuthenticated ? "https://oauth.reddit.com" : "https://www.reddit.com";
     
     const url = query 
@@ -385,6 +382,9 @@ export const useRedditApi = () => {
           display_name: subreddit.display_name,
           subscribers: subreddit.subscribers,
           icon_img: subreddit.icon_img || '',
+          description: subreddit.description || subreddit.public_description || '',
+          user_is_subscriber: subreddit.user_is_subscriber || false,
+          public_description: subreddit.public_description || '',
         };
       });
     } catch (error) {
