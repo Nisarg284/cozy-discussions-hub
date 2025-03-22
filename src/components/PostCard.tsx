@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowUp, ArrowDown, MessageSquare, Share2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,40 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { RedditPost, useRedditApi } from "@/services/reddit";
-
-// Helper function to format dates
-const formatDate = (timestamp: number): string => {
-  const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds} second${diffInSeconds !== 1 ? "s" : ""} ago`;
-  }
-  
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes !== 1 ? "s" : ""} ago`;
-  }
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
-  }
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) {
-    return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`;
-  }
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) {
-    return `${diffInMonths} month${diffInMonths !== 1 ? "s" : ""} ago`;
-  }
-  
-  const diffInYears = Math.floor(diffInMonths / 12);
-  return `${diffInYears} year${diffInYears !== 1 ? "s" : ""} ago`;
-};
+import { formatDistanceToNow } from "date-fns";
 
 interface PostCardProps {
   post: RedditPost;
@@ -53,8 +20,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
   const [vote, setVote] = useState<boolean | null>(post.liked);
   const [score, setScore] = useState(post.score);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
-  const handleVote = (direction: 1 | 0 | -1) => {
+  const handleVote = (e: React.MouseEvent, direction: 1 | 0 | -1) => {
+    e.stopPropagation(); // Prevent card click when voting
+    
     if (!isAuthenticated) {
       toast.error("Please sign in to vote");
       return;
@@ -85,7 +55,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
     onVote(post.id, direction, vote);
   };
   
-  const handleShare = () => {
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click when sharing
     navigator.clipboard.writeText(`https://reddit.com${post.permalink}`);
     toast.success("Link copied to clipboard");
   };
@@ -97,14 +68,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
   };
 
   const redditUrl = `https://reddit.com${post.permalink}`;
+  const postDetailUrl = `/r/${post.subreddit}/comments/${post.id}`;
+  
+  const handleCardClick = () => {
+    navigate(postDetailUrl);
+  };
   
   return (
     <Card 
-      className={`overflow-hidden transition-all duration-200 mb-4 ${
+      className={`overflow-hidden transition-all duration-200 mb-4 cursor-pointer ${
         isHovered ? "shadow-card -translate-y-1" : "shadow-subtle"
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleCardClick}
     >
       {/* Vote sidebar */}
       <div className="flex">
@@ -113,7 +90,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
             variant="ghost" 
             size="icon"
             className={`h-8 w-8 rounded-full ${vote === true ? "text-reddit-orange" : ""}`}
-            onClick={() => handleVote(1)}
+            onClick={(e) => handleVote(e, 1)}
           >
             <ArrowUp size={18} className={vote === true ? "animate-vote-up" : ""} />
           </Button>
@@ -124,7 +101,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
             variant="ghost" 
             size="icon"
             className={`h-8 w-8 rounded-full ${vote === false ? "text-primary" : ""}`}
-            onClick={() => handleVote(-1)}
+            onClick={(e) => handleVote(e, -1)}
           >
             <ArrowDown size={18} className={vote === false ? "animate-vote-down" : ""} />
           </Button>
@@ -133,20 +110,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
         <div className="flex-1 p-4">
           {/* Post header */}
           <div className="flex items-center text-xs text-muted-foreground mb-2">
-            <Link to={`/r/${post.subreddit}`} className="font-medium hover:underline">
+            <Link 
+              to={`/r/${post.subreddit}`} 
+              className="font-medium hover:underline"
+              onClick={(e) => e.stopPropagation()} // Allow subreddit navigation
+            >
               r/{post.subreddit}
             </Link>
             <span className="mx-1">•</span>
             <span>Posted by u/{post.author}</span>
             <span className="mx-1">•</span>
-            <span>{formatDate(post.created)}</span>
+            <span>{formatDistanceToNow(new Date(post.created * 1000), { addSuffix: true })}</span>
           </div>
 
           {/* Post title */}
           <h3 className="text-lg font-semibold mb-3 text-balance">
-            <a href={redditUrl} target="_blank" rel="noopener noreferrer">
-              {post.title}
-            </a>
+            {post.title}
           </h3>
 
           {/* Post content - conditional */}
@@ -154,14 +133,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
             <div className="prose prose-sm max-w-none mb-4">
               <p>{truncateText(post.selftext)}</p>
               {post.selftext.length > 300 && (
-                <a 
-                  href={redditUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary text-sm hover:underline"
-                >
-                  Read more
-                </a>
+                <span className="text-primary text-sm hover:underline">Read more</span>
               )}
             </div>
           )}
@@ -169,28 +141,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
           {/* Post thumbnail - if available and not a self post */}
           {!post.is_self && post.thumbnail && post.thumbnail.startsWith('http') && (
             <div className="mb-4">
-              <a href={post.url} target="_blank" rel="noopener noreferrer">
-                <img 
-                  src={post.thumbnail} 
-                  alt={post.title}
-                  className="rounded-md max-h-96 object-contain"
-                  loading="lazy"
-                />
-              </a>
+              <img 
+                src={post.thumbnail} 
+                alt={post.title}
+                className="rounded-md max-h-96 object-contain"
+                loading="lazy"
+              />
             </div>
           )}
 
           {/* Post actions */}
           <div className="flex items-center space-x-4 mt-2">
-            <a 
-              href={redditUrl}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+            <div 
+              className="flex items-center text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+              onClick={(e) => e.stopPropagation()} // This doesn't actually stop propagation as the link will be followed
             >
               <MessageSquare size={16} className="mr-1" />
               <span>{post.num_comments} comments</span>
-            </a>
+            </div>
             
             <Button 
               variant="ghost" 
