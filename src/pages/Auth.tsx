@@ -35,9 +35,13 @@ const Auth = () => {
         await login(code);
         setStatus("success");
         
+        // Get the redirect path if available, otherwise go to home
+        const redirectTo = sessionStorage.getItem("redirectAfterAuth") || "/";
+        sessionStorage.removeItem("redirectAfterAuth");
+        
         // Redirect after short delay to show success message
         setTimeout(() => {
-          navigate("/");
+          navigate(redirectTo);
         }, 1500);
       } catch (err: any) {
         console.error("Authentication error:", err);
@@ -84,7 +88,7 @@ const Auth = () => {
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-6" />
           <h1 className="text-2xl font-semibold mb-3">Successfully Signed In!</h1>
           <p className="text-muted-foreground">
-            You're now authenticated with Reddit. Redirecting you to the homepage...
+            You're now authenticated with Reddit. Redirecting you to your personalized feed...
           </p>
         </div>
       </div>

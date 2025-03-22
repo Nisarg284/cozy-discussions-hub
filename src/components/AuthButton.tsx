@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LogIn, LogOut, User, ChevronDown, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,6 +17,15 @@ import { getAuthUrl } from "@/services/reddit";
 
 const AuthButton = () => {
   const { isAuthenticated, username, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleAuthClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Save current path to redirect back after auth
+    sessionStorage.setItem("redirectAfterAuth", location.pathname);
+    window.location.href = getAuthUrl();
+  };
 
   if (isAuthenticated && username) {
     return (
@@ -74,7 +84,8 @@ const AuthButton = () => {
 
   return (
     <a
-      href={getAuthUrl()}
+      href="#"
+      onClick={handleAuthClick}
       className="flex items-center space-x-2 rounded-full px-5 animate-fade-in bg-reddit-orange text-white hover:bg-reddit-orange/90 h-9 py-2 text-sm font-medium transition-colors"
     >
       <LogIn className="h-4 w-4" />

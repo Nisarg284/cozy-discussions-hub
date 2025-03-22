@@ -422,6 +422,69 @@ export const useRedditApi = () => {
     }
   };
 
+  const searchVideos = async (
+    query: string,
+    after?: string,
+    limit: number = 25
+  ): Promise<{ posts: RedditPost[]; after: string | null }> => {
+    const baseUrl = isAuthenticated ? "https://oauth.reddit.com" : "https://www.reddit.com";
+    
+    const params = new URLSearchParams();
+    params.set("q", query);
+    params.set("type", "link");
+    params.set("is_video", "true");
+    if (after) params.set("after", after);
+    params.set("limit", limit.toString());
+    params.set("raw_json", "1");
+    
+    const url = `${baseUrl}/search.json?${params.toString()}`;
+    
+    try {
+      const response = isAuthenticated 
+        ? await fetchWithAuth(url)
+        : await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Reddit API error: ${response.status}`);
+      }
+      
+      const data: RedditApiResponse = await response.json();
+      
+      const posts = data.data.children
+        .filter(child => child.data.is_video)
+        .map(child => {
+          const post = child.data;
+          return {
+            id: post.id,
+            title: post.title,
+            author: post.author,
+            subreddit: post.subreddit,
+            created: post.created_utc,
+            score: post.score,
+            num_comments: post.num_comments,
+            url: post.url,
+            permalink: post.permalink,
+            selftext: post.selftext,
+            is_self: post.is_self,
+            thumbnail: post.thumbnail,
+            upvote_ratio: post.upvote_ratio,
+            is_video: post.is_video,
+            liked: post.likes,
+            media: post.media,
+            preview: post.preview,
+          };
+        });
+      
+      return {
+        posts,
+        after: data.data.after,
+      };
+    } catch (error) {
+      console.error("Failed to search videos:", error);
+      throw error;
+    }
+  };
+
   return {
     getPosts,
     getPersonalizedFeed,
@@ -429,6 +492,7 @@ export const useRedditApi = () => {
     vote,
     getSubreddits,
     getSubscribedSubreddits,
-    subscribeToSubreddit
+    subscribeToSubreddit,
+    searchVideos
   };
 };

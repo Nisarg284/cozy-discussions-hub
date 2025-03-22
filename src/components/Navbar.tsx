@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, X, Bell, Plus, Sparkles, ChevronDown } from "lucide-react";
+import { Menu, Search, X, Bell, Plus, Sparkles, ChevronDown, Film } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -19,6 +19,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +29,11 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement search functionality
+  };
 
   return (
     <header
@@ -59,9 +65,14 @@ const Navbar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem>Home</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate("/")}>Home</DropdownMenuItem>
               <DropdownMenuItem>Popular</DropdownMenuItem>
               <DropdownMenuItem>All</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => navigate("/videos")}>
+                <Film className="mr-2 h-4 w-4" />
+                Videos
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Create Community</DropdownMenuItem>
             </DropdownMenuContent>
@@ -69,11 +80,7 @@ const Navbar = () => {
         )}
 
         {/* Search */}
-        <div
-          className={`relative mx-4 flex-1 max-w-md transition-all duration-300 ${
-            searchFocused ? "scale-105" : ""
-          }`}
-        >
+        <form onSubmit={handleSearch} className="relative mx-4 flex-1 max-w-md transition-all duration-300">
           <div className="relative">
             <Search
               className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground transition-colors duration-200 ${
@@ -88,10 +95,15 @@ const Navbar = () => {
               onBlur={() => setSearchFocused(false)}
             />
           </div>
-        </div>
+        </form>
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-2">
+          <Link to="/videos" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80">
+            <Film size={18} />
+            <span className="hidden lg:inline">Videos</span>
+          </Link>
+          
           {isAuthenticated && (
             <>
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
@@ -140,6 +152,16 @@ const Navbar = () => {
                   <div className="py-2">
                     <AuthButton />
                   </div>
+                  
+                  <Link 
+                    to="/videos" 
+                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 text-primary font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Film className="mr-3" size={20} />
+                    Videos
+                  </Link>
+                  
                   {isAuthenticated && (
                     <div className="space-y-2 pt-4 border-t">
                       <Button variant="ghost" className="w-full justify-start">

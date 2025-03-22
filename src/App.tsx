@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Subreddit from "./pages/Subreddit";
 import PostDetail from "./pages/PostDetail";
+import VideoSearchPage from "./pages/VideoSearchPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/redirect" element={<Auth />} />
             <Route path="/r/:subreddit" element={<Subreddit />} />
             <Route path="/r/:subreddit/comments/:postId" element={<PostDetail />} />
+            <Route path="/videos" element={<VideoSearchPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
