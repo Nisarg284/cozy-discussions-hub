@@ -4,10 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowUp, ArrowDown, MessageSquare, Share2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { RedditPost, useRedditApi } from "@/services/reddit";
+import { RedditPost } from "@/services/reddit";
 import { formatDistanceToNow } from "date-fns";
 
 interface PostCardProps {
@@ -67,7 +66,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
     return text.slice(0, maxLength) + "...";
   };
 
-  const redditUrl = `https://reddit.com${post.permalink}`;
   const postDetailUrl = `/r/${post.subreddit}/comments/${post.id}`;
   
   const handleCardClick = () => {
@@ -154,7 +152,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onVote }) => {
           <div className="flex items-center space-x-4 mt-2">
             <div 
               className="flex items-center text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-              onClick={(e) => e.stopPropagation()} // This doesn't actually stop propagation as the link will be followed
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate(postDetailUrl);
+              }} 
             >
               <MessageSquare size={16} className="mr-1" />
               <span>{post.num_comments} comments</span>

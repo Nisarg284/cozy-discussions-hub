@@ -39,8 +39,8 @@ export interface Subreddit {
   display_name: string;
   subscribers: number;
   icon_img: string;
-  user_is_subscriber?: boolean;
   description?: string;
+  user_is_subscriber?: boolean;
 }
 
 interface RedditApiResponse {
@@ -432,4 +432,3 @@ export const useRedditApi = () => {
     subscribeToSubreddit
   };
 };
-
