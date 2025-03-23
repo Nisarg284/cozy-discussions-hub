@@ -18,9 +18,10 @@ export const getMe = async () => {
   }
 };
 
-export const getPersonalizedFeed = async (type = 'best') => {
+export const getPersonalizedFeed = async (type = 'best', after = null) => {
   try {
-    const response = await backendApi.get(`/me/feed/${type}`);
+    const url = after ? `/me/feed/${type}?after=${after}` : `/me/feed/${type}`;
+    const response = await backendApi.get(url);
     return response.data;
   } catch (error) {
     console.error(`Error fetching ${type} feed:`, error);
@@ -38,9 +39,10 @@ export const getSubscribedSubreddits = async (where = 'subscriber') => {
   }
 };
 
-export const getSubredditPosts = async (subredditName: string, type = 'hot') => {
+export const getSubredditPosts = async (subredditName: string, type = 'hot', after = null) => {
   try {
-    const response = await backendApi.get(`/subreddit/${subredditName}/${type}`);
+    const url = after ? `/subreddit/${subredditName}/${type}?after=${after}` : `/subreddit/${subredditName}/${type}`;
+    const response = await backendApi.get(url);
     return response.data;
   } catch (error) {
     console.error(`Error fetching posts from r/${subredditName}:`, error);
@@ -48,15 +50,19 @@ export const getSubredditPosts = async (subredditName: string, type = 'hot') => 
   }
 };
 
-export const searchVideos = async (query: string) => {
+export const searchVideos = async (query: string, after = null) => {
   try {
-    const response = await backendApi.get('/search', {
-      params: {
-        query,
-        type: 'link',
-        sort: 'relevance'
-      }
-    });
+    const params: Record<string, string> = {
+      query,
+      type: 'link',
+      sort: 'relevance'
+    };
+    
+    if (after) {
+      params.after = after;
+    }
+    
+    const response = await backendApi.get('/search', { params });
     return response.data;
   } catch (error) {
     console.error('Error searching videos:', error);
@@ -82,6 +88,38 @@ export const searchSubreddits = async (query: string) => {
     return response.data;
   } catch (error) {
     console.error('Error searching subreddits:', error);
+    throw error;
+  }
+};
+
+export const getFriendSuggestions = async () => {
+  try {
+    // This would typically be a specialized endpoint
+    // For now, we'll use popular subreddits as a proxy for friend suggestions
+    const response = await backendApi.get('/me/subreddit/popular');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching friend suggestions:', error);
+    throw error;
+  }
+};
+
+export const getUserKarma = async () => {
+  try {
+    const response = await backendApi.get('/me/karma');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user karma:', error);
+    throw error;
+  }
+};
+
+export const getUserTrophies = async () => {
+  try {
+    const response = await backendApi.get('/me/trophies');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user trophies:', error);
     throw error;
   }
 };

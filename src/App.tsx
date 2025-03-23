@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Subreddit from "./pages/Subreddit";
 import PostDetail from "./pages/PostDetail";
 import VideoSearchPage from "./pages/VideoSearchPage";
+import Explore from "./pages/Explore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/r/:subreddit" element={<Subreddit />} />
             <Route path="/r/:subreddit/comments/:postId" element={<PostDetail />} />
             <Route path="/videos" element={<VideoSearchPage />} />
+            <Route path="/explore" element={<Explore />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

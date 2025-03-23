@@ -1,7 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, X, Bell, Plus, Sparkles, ChevronDown, Film } from "lucide-react";
+import { 
+  Menu, Search, X, Bell, Plus, Sparkles, ChevronDown, 
+  Film, Compass, Users
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -66,6 +69,10 @@ const Navbar = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuItem onSelect={() => navigate("/")}>Home</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate("/explore")}>
+                <Compass className="mr-2 h-4 w-4" />
+                Explore
+              </DropdownMenuItem>
               <DropdownMenuItem>Popular</DropdownMenuItem>
               <DropdownMenuItem>All</DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -99,6 +106,11 @@ const Navbar = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-2">
+          <Link to="/explore" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80">
+            <Compass size={18} />
+            <span className="hidden lg:inline">Explore</span>
+          </Link>
+          
           <Link to="/videos" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80">
             <Film size={18} />
             <span className="hidden lg:inline">Videos</span>
@@ -154,6 +166,15 @@ const Navbar = () => {
                   </div>
                   
                   <Link 
+                    to="/explore" 
+                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 text-primary font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Compass className="mr-3" size={20} />
+                    Explore
+                  </Link>
+                  
+                  <Link 
                     to="/videos" 
                     className="flex items-center py-3 px-4 rounded-md bg-secondary/50 text-primary font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -175,6 +196,10 @@ const Navbar = () => {
                       <Button variant="ghost" className="w-full justify-start">
                         <Bell className="mr-2" size={18} />
                         Notifications
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Users className="mr-2" size={18} />
+                        Friends
                       </Button>
                     </div>
                   )}
