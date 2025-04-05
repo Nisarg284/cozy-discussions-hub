@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,8 +12,11 @@ import { Filter, Flag, MessageSquare, Settings, ShieldAlert, User, Users } from 
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
-const ModTools = () => {
-  const { subreddit } = useParams<{ subreddit: string }>();
+interface ModToolsProps {
+  subreddit: string;
+}
+
+const ModTools: React.FC<ModToolsProps> = ({ subreddit }) => {
   const { isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(
