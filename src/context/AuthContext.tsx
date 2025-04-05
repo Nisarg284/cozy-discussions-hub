@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -9,6 +8,11 @@ interface AuthState {
   refreshToken: string | null;
   expiresAt: number | null;
   username: string | null;
+  user?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
 }
 
 interface AuthContextType extends AuthState {
@@ -29,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshToken: null,
     expiresAt: null,
     username: null,
+    user: undefined,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,6 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshToken: data.refresh_token,
         expiresAt,
         username: userData.name,
+        user: {
+          id: userData.id,
+          name: userData.name,
+          avatar: userData.icon_img || undefined
+        },
       });
 
       toast.success(`Welcome back, ${userData.name}!`);
@@ -180,6 +190,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshToken: data.refresh_token || refreshToken,
         expiresAt,
         username: authState.username,
+        user: {
+          id: authState.user?.id,
+          name: authState.user?.name,
+          avatar: authState.user?.avatar
+        },
       };
 
       setAuthState(newState);
@@ -200,6 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshToken: null,
       expiresAt: null,
       username: null,
+      user: undefined,
     });
     toast.info("Logged out successfully");
   };

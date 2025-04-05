@@ -1,291 +1,261 @@
 
 import React, { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
-import { Inbox, SendHorizontal, Archive, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useParams, useNavigate } from "react-router-dom";
 import MessageCompose from "@/components/MessageCompose";
+import { format } from "date-fns";
 
-// Mock data for messages
-const mockInboxMessages = [
-  {
-    id: 1,
-    from: "redditAdmin",
-    subject: "Welcome to Reddit",
-    content: "Welcome to Reddit! We're excited to have you join our community. If you have any questions, feel free to ask.",
-    read: false,
-    time: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
-  },
-  {
-    id: 2,
-    from: "moderator_r_news",
-    subject: "Your post has been removed",
-    content: "Your post has been removed for violating community guidelines. Please review the subreddit rules before posting again.",
-    read: true,
-    time: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-  },
-  {
-    id: 3,
-    from: "userX",
-    subject: "Question about your post",
-    content: "Hey, I had a question about the post you made regarding the new product launch. Could you provide more details about it?",
-    read: false,
-    time: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // 1 week ago
-  },
-];
-
-const mockSentMessages = [
-  {
-    id: 1,
-    to: "userY",
-    subject: "Response to your comment",
-    content: "Thanks for your comment on my post. I've added the additional information you requested.",
-    time: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-  },
-  {
-    id: 2,
-    to: "moderator_r_askscience",
-    subject: "Question about my post removal",
-    content: "I noticed my post was removed from r/askscience. Could you let me know which rule it violated so I can make appropriate adjustments?",
-    time: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-  },
-];
-
-type MessageType = {
+// Define proper types for messages
+type ReceivedMessage = {
   id: number;
-  from?: string;
-  to?: string;
+  from: string;
   subject: string;
   content: string;
-  read?: boolean;
+  read: boolean;
   time: Date;
 };
 
+type SentMessage = {
+  id: number;
+  to: string;
+  subject: string;
+  content: string;
+  time: Date;
+};
+
+type Message = ReceivedMessage | SentMessage;
+
+// Helper function to determine if a message is a received message
+const isReceivedMessage = (message: Message): message is ReceivedMessage => {
+  return 'from' in message;
+};
+
+// Mock data
+const mockMessages: Message[] = [
+  {
+    id: 1,
+    from: "reddit_user1",
+    subject: "Welcome to Reddit Clone",
+    content: "Thanks for joining our community! Let me know if you need any help getting started.",
+    read: false,
+    time: new Date(2023, 2, 15, 9, 30)
+  },
+  {
+    id: 2,
+    from: "moderator_coolsub",
+    subject: "Your post has been approved",
+    content: "Your recent submission to r/coolsub has been approved by our moderation team. Thanks for contributing!",
+    read: true,
+    time: new Date(2023, 2, 14, 15, 45)
+  },
+  {
+    id: 3,
+    to: "new_redditor",
+    subject: "Question about your post",
+    content: "I really enjoyed your recent post about coding. Would you mind sharing some additional resources on the topic?",
+    time: new Date(2023, 2, 13, 11, 20)
+  }
+];
+
 const Messages = () => {
-  const { view = "inbox", messageId } = useParams<{ view: string; messageId?: string }>();
   const { isAuthenticated } = useAuth();
+  const [messages] = useState<Message[]>(mockMessages);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [composeMode, setComposeMode] = useState(false);
+  const { view, messageId } = useParams();
   const navigate = useNavigate();
-  const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
   
-  // Determine which messages to show based on the view
-  const messagesForView = view === "sent" ? mockSentMessages : mockInboxMessages;
+  const filteredMessages = messages.filter(message => {
+    if (view === "inbox") return isReceivedMessage(message);
+    if (view === "sent") return !isReceivedMessage(message);
+    return true;
+  });
   
-  // If a messageId is provided, find the message
   React.useEffect(() => {
     if (messageId) {
-      const found = messagesForView.find(m => m.id.toString() === messageId);
-      if (found) {
-        setSelectedMessage(found);
-        // Mark as read if it's an inbox message
-        if (view === "inbox" && !found.read) {
-          // This would update the message in a real implementation
-        }
+      const message = messages.find(m => m.id === parseInt(messageId));
+      if (message) {
+        setSelectedMessage(message);
+        setComposeMode(false);
       }
-    } else {
-      setSelectedMessage(null);
     }
-  }, [messageId, view, messagesForView]);
+  }, [messageId, messages]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#DAE0E6] dark:bg-background">
-        <Navbar />
-        <div className="container max-w-4xl mx-auto pt-16 pb-10 px-4">
-          <Card className="p-6 text-center">
-            <h1 className="text-xl font-semibold mb-4">Sign in to view your messages</h1>
-            <Button asChild>
-              <a href="/auth">Sign In</a>
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const handleSelectMessage = (message: Message) => {
+    setSelectedMessage(message);
+    setComposeMode(false);
+    navigate(`/messages/${view || 'inbox'}/${message.id}`);
+  };
+  
+  const handleComposeClick = () => {
+    setComposeMode(true);
+    setSelectedMessage(null);
+    navigate('/messages/compose');
+  };
 
   return (
     <div className="min-h-screen bg-[#DAE0E6] dark:bg-background">
       <Navbar />
       
-      <div className="container max-w-4xl mx-auto pt-16 pb-10 px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Messages</h1>
-          <p className="text-muted-foreground">View and manage your private messages</p>
-        </div>
-
-        {view === "compose" ? (
-          <MessageCompose />
-        ) : (
-          <Card className="overflow-hidden">
-            <Tabs defaultValue={view || "inbox"} className="w-full">
-              <div className="flex justify-between items-center px-4 py-3 border-b border-border">
-                <TabsList className="grid grid-cols-3 w-auto">
-                  <TabsTrigger 
-                    value="inbox" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate("/messages/inbox")}
-                  >
-                    <Inbox className="h-4 w-4" />
-                    <span>Inbox</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="sent" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate("/messages/sent")}
-                  >
-                    <SendHorizontal className="h-4 w-4" />
-                    <span>Sent</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="mod" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate("/messages/mod")}
-                  >
-                    <Shield className="h-4 w-4" />
-                    <span>Mod</span>
-                  </TabsTrigger>
-                </TabsList>
-                
+      <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Messages navigation */}
+          <div className="md:w-64 w-full">
+            <Card>
+              <div className="p-4">
                 <Button 
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={() => navigate("/messages/compose")}
+                  className="w-full mb-4 bg-reddit-orange hover:bg-reddit-orange/90"
+                  onClick={handleComposeClick}
                 >
-                  <SendHorizontal className="h-4 w-4" />
-                  <span>New Message</span>
+                  New Message
                 </Button>
-              </div>
-
-              <div className="flex h-[calc(100vh-300px)] min-h-[400px]">
-                {/* Message List */}
-                <div className="w-1/3 border-r border-border overflow-y-auto">
-                  {messagesForView.length > 0 ? (
-                    <div className="divide-y divide-border">
-                      {messagesForView.map((message) => (
-                        <button
-                          key={message.id}
-                          className={`p-3 text-left w-full hover:bg-muted/50 ${
-                            selectedMessage?.id === message.id ? 'bg-muted' : ''
-                          } ${!message.read && view === 'inbox' ? 'font-medium' : ''}`}
-                          onClick={() => {
-                            setSelectedMessage(message);
-                            navigate(`/messages/${view}/${message.id}`);
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-8 w-8 mt-1">
-                              <AvatarFallback className="text-xs">
-                                {message.from 
-                                  ? message.from.substring(0, 2).toUpperCase() 
-                                  : message.to?.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm truncate">
-                                  {message.from ? `u/${message.from}` : `To: u/${message.to}`}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {formatDistanceToNow(message.time, { addSuffix: true })}
-                                </p>
+                
+                <Tabs defaultValue={view || "inbox"} className="w-full">
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger 
+                      value="inbox" 
+                      className="flex-1"
+                      onClick={() => navigate('/messages/inbox')}
+                    >
+                      Inbox
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="sent" 
+                      className="flex-1"
+                      onClick={() => navigate('/messages/sent')}
+                    >
+                      Sent
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="inbox" className="m-0">
+                    <ScrollArea className="h-[500px]">
+                      {filteredMessages.length > 0 ? (
+                        <div className="space-y-1">
+                          {filteredMessages.map(message => (
+                            <div 
+                              key={message.id}
+                              className={`p-3 rounded-md cursor-pointer transition-colors ${
+                                selectedMessage?.id === message.id 
+                                  ? 'bg-secondary' 
+                                  : 'hover:bg-secondary/50'
+                              } ${
+                                isReceivedMessage(message) && !message.read 
+                                  ? 'font-semibold' 
+                                  : ''
+                              }`}
+                              onClick={() => handleSelectMessage(message)}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="text-sm font-medium truncate">
+                                  {isReceivedMessage(message) 
+                                    ? `From: ${message.from}` 
+                                    : `To: ${message.to}`}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {format(message.time, 'MMM d')}
+                                </div>
                               </div>
-                              <p className="text-sm font-medium truncate">{message.subject}</p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {message.content}
-                              </p>
+                              <div className="text-sm truncate mt-1">{message.subject}</div>
                             </div>
-                            {!message.read && view === 'inbox' && (
-                              <div className="h-2 w-2 bg-primary rounded-full mt-1 flex-shrink-0"></div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-4">
-                      {view === "inbox" ? (
-                        <>
-                          <Inbox className="h-12 w-12 text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground text-center">Your inbox is empty</p>
-                        </>
-                      ) : view === "sent" ? (
-                        <>
-                          <SendHorizontal className="h-12 w-12 text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground text-center">You haven't sent any messages</p>
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="h-12 w-12 text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground text-center">No mod messages</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Message Content */}
-                <div className="w-2/3 p-4 overflow-y-auto">
-                  {selectedMessage ? (
-                    <div>
-                      <div className="mb-4">
-                        <h2 className="text-xl font-semibold">{selectedMessage.subject}</h2>
-                        <div className="flex items-center justify-between mt-2 text-sm">
-                          <div>
-                            {selectedMessage.from ? (
-                              <span>
-                                From: <Link to={`/user/${selectedMessage.from}`} className="text-primary hover:underline">u/{selectedMessage.from}</Link>
-                              </span>
-                            ) : (
-                              <span>
-                                To: <Link to={`/user/${selectedMessage.to}`} className="text-primary hover:underline">u/{selectedMessage.to}</Link>
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-muted-foreground">
-                            {formatDistanceToNow(selectedMessage.time, { addSuffix: true })}
-                          </span>
+                          ))}
                         </div>
-                      </div>
-                      
-                      <Separator className="my-4" />
-                      
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{selectedMessage.content}</p>
-                      </div>
-                      
-                      <div className="mt-6 flex gap-2">
-                        {selectedMessage.from && (
-                          <Button 
-                            onClick={() => navigate(`/messages/compose?to=${selectedMessage.from}`)}
-                            className="flex items-center gap-2"
-                          >
-                            <SendHorizontal className="h-4 w-4" />
-                            Reply
-                          </Button>
-                        )}
-                        <Button variant="outline" className="flex items-center gap-2">
-                          <Archive className="h-4 w-4" />
-                          Archive
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full">
-                      <p className="text-muted-foreground text-center">
-                        Select a message to view its contents
-                      </p>
-                    </div>
-                  )}
-                </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No messages found
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                  
+                  <TabsContent value="sent" className="m-0">
+                    <ScrollArea className="h-[500px]">
+                      {filteredMessages.length > 0 ? (
+                        <div className="space-y-1">
+                          {filteredMessages.map(message => (
+                            <div 
+                              key={message.id}
+                              className={`p-3 rounded-md cursor-pointer transition-colors ${
+                                selectedMessage?.id === message.id 
+                                  ? 'bg-secondary' 
+                                  : 'hover:bg-secondary/50'
+                              }`}
+                              onClick={() => handleSelectMessage(message)}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="text-sm font-medium truncate">
+                                  {isReceivedMessage(message) 
+                                    ? `From: ${message.from}` 
+                                    : `To: ${message.to}`}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {format(message.time, 'MMM d')}
+                                </div>
+                              </div>
+                              <div className="text-sm truncate mt-1">{message.subject}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No messages found
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </div>
-            </Tabs>
-          </Card>
-        )}
+            </Card>
+          </div>
+          
+          {/* Message content area */}
+          <div className="flex-1">
+            <Card className="p-6">
+              {composeMode ? (
+                <MessageCompose />
+              ) : selectedMessage ? (
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-xl font-semibold">{selectedMessage.subject}</h2>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {isReceivedMessage(selectedMessage) 
+                          ? `From: ${selectedMessage.from}` 
+                          : `To: ${selectedMessage.to}`} • {format(selectedMessage.time, 'PPpp')}
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setComposeMode(true);
+                        navigate('/messages/compose');
+                      }}
+                    >
+                      Reply
+                    </Button>
+                  </div>
+                  <Separator className="my-4" />
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <p>{selectedMessage.content}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground">
+                    Select a message to read or compose a new one
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

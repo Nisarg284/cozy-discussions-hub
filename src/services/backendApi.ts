@@ -124,4 +124,46 @@ export const getUserTrophies = async () => {
   }
 };
 
+export const createSubreddit = async (name: string, description: string, type: string) => {
+  try {
+    const response = await backendApi.post('/subreddit/create', {
+      name,
+      description,
+      type
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating subreddit:', error);
+    throw error;
+  }
+};
+
+export const submitPost = async (subreddit: string, title: string, content: string, type: string) => {
+  try {
+    const response = await backendApi.post(`/subreddit/${subreddit}/submit`, {
+      title,
+      content,
+      type
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting post:', error);
+    throw error;
+  }
+};
+
+export const submitComment = async (postId: string, text: string, parentId?: string) => {
+  try {
+    const response = await backendApi.post(`/comment`, {
+      post_id: postId,
+      text,
+      parent_id: parentId
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting comment:', error);
+    throw error;
+  }
+};
+
 export default backendApi;
