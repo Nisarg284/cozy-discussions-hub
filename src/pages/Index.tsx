@@ -30,14 +30,14 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#DAE0E6]">
+    <div className="min-h-screen bg-background dark:bg-background">
       <Navbar />
       
       <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
         <div className="flex flex-col md:flex-row gap-6 pt-4">
           {/* Main content */}
           <div className="flex-1">
-            <Card className="bg-white mb-4 p-2 border border-border/60">
+            <Card className="mb-4 p-2 border border-border/60">
               <div className="flex mb-2 border-b border-border/60">
                 <button
                   onClick={() => handleFeedTypeChange("home")}
@@ -151,7 +151,7 @@ const Index = () => {
           <div className="md:w-80 space-y-4">
             {isAuthenticated && <SubscribedSubreddits />}
             
-            <Card className="p-4 border border-border/60 bg-white overflow-hidden">
+            <Card className="p-4 border border-border/60 overflow-hidden">
               <div className="bg-reddit-blue h-10 -mx-4 -mt-4 mb-4"></div>
               <h2 className="text-base font-semibold mb-4">About Reddit</h2>
               <p className="text-sm text-muted-foreground mb-4">
@@ -167,7 +167,7 @@ const Index = () => {
               </div>
             </Card>
 
-            <Card className="p-4 border border-border/60 bg-white">
+            <Card className="p-4 border border-border/60">
               <h2 className="text-base font-semibold mb-4 flex items-center">
                 <Shield className="h-5 w-5 mr-2 text-reddit-blue" />
                 Reddit Content Policy
@@ -196,7 +196,7 @@ const Index = () => {
               </ul>
             </Card>
 
-            <Card className="p-4 border border-border/60 bg-white">
+            <Card className="p-4 border border-border/60">
               <div className="flex items-center mb-2">
                 <Info className="h-4 w-4 mr-2 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Reddit Inc © 2023. All rights reserved</span>

@@ -50,7 +50,7 @@ const UserProfile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#DAE0E6]">
+      <div className="min-h-screen bg-background dark:bg-background">
         <Navbar />
         <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
           <div className="flex justify-center items-center py-10">
@@ -63,7 +63,7 @@ const UserProfile = () => {
 
   if (isError || !profile) {
     return (
-      <div className="min-h-screen bg-[#DAE0E6]">
+      <div className="min-h-screen bg-background dark:bg-background">
         <Navbar />
         <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
           <div className="text-center py-10">
@@ -76,7 +76,7 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#DAE0E6]">
+    <div className="min-h-screen bg-background dark:bg-background">
       <Navbar />
       
       <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
@@ -84,9 +84,9 @@ const UserProfile = () => {
           {/* Main content */}
           <div className="flex-1">
             {/* User header */}
-            <Card className="bg-white mb-4 p-6 border border-border/60">
+            <Card className="mb-4 p-6 border border-border/60">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                <Avatar className="h-20 w-20 border-4 border-white shadow-md">
+                <Avatar className="h-20 w-20 border-4 border-background shadow-md">
                   <AvatarImage src={profile.profile_img} alt={username} />
                   <AvatarFallback className="text-xl bg-reddit-orange text-white">
                     {username.substring(0, 2).toUpperCase()}
@@ -124,7 +124,7 @@ const UserProfile = () => {
             </Card>
             
             {/* User content */}
-            <Card className="bg-white border border-border/60">
+            <Card className="border border-border/60">
               <Tabs defaultValue="posts">
                 <TabsList className="w-full justify-start p-0 h-12 border-b rounded-none gap-0">
                   <TabsTrigger 
@@ -207,14 +207,14 @@ const UserProfile = () => {
           
           {/* Sidebar */}
           <div className="md:w-80 space-y-4">
-            <Card className="p-4 border border-border/60 bg-white">
+            <Card className="p-4 border border-border/60">
               <h2 className="text-base font-semibold mb-3">About u/{username}</h2>
               <div className="text-sm text-muted-foreground">
                 {profile.description || "This user hasn't added a description yet."}
               </div>
             </Card>
             
-            <Card className="p-4 border border-border/60 bg-white">
+            <Card className="p-4 border border-border/60">
               <h2 className="text-base font-semibold mb-3">Moderated Communities</h2>
               <p className="text-sm text-muted-foreground">
                 This user doesn't moderate any communities.
