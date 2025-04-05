@@ -1,156 +1,217 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getUserKarma, getUserTrophies } from "@/services/backendApi";
-import { Trophy, ArrowUp, MessageSquare, CalendarClock, Users, BadgeCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarDays, Trophy, Award, BookOpen, MessageSquare, ArrowUp, Clock, Fire } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useRedditApi } from "@/services/reddit";
+import { Loader2 } from "lucide-react";
 import PostList from "@/components/PostList";
 
 const UserProfile = () => {
-  const { username } = useParams();
-  const { isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState("posts");
-
-  const { data: karma, isLoading: isKarmaLoading } = useQuery({
-    queryKey: ["userKarma", username],
-    queryFn: getUserKarma,
-    enabled: isAuthenticated && !!username,
+  const { username = "" } = useParams<{ username: string }>();
+  const { getUserProfile } = useRedditApi();
+  
+  const { 
+    data: profile, 
+    isLoading, 
+    isError 
+  } = useQuery({
+    queryKey: ["userProfile", username],
+    queryFn: () => getUserProfile(username),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!username,
   });
 
-  const { data: trophies, isLoading: isTrophiesLoading } = useQuery({
-    queryKey: ["userTrophies", username],
-    queryFn: getUserTrophies,
-    enabled: isAuthenticated && !!username,
-  });
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
-  return (
-    <div className="pt-16 min-h-screen bg-background dark:bg-gray-900">
-      <div className="container max-w-5xl px-4 mx-auto">
-        {/* Profile Header */}
-        <div className="relative">
-          {/* Banner */}
-          <div className="h-32 md:h-48 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-b-lg" />
-          
-          {/* Profile Info */}
-          <div className="px-4 sm:px-6 -mt-16">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end mb-6">
-              <Avatar className="h-24 w-24 border-4 border-background dark:border-gray-900 shadow-md">
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {username?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="mt-4 sm:mt-0 sm:ml-4 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start">
-                  <h1 className="text-2xl font-bold">{username}</h1>
-                  <BadgeCheck className="h-5 w-5 ml-2 text-blue-500" />
-                </div>
-                
-                <div className="flex items-center justify-center sm:justify-start text-sm text-muted-foreground mt-1">
-                  <CalendarClock className="h-4 w-4 mr-1" />
-                  <span>Redditor since 2 years ago</span>
-                </div>
-              </div>
-              
-              <div className="flex mt-4 sm:mt-0 sm:ml-auto">
-                <Button>Follow</Button>
-                <Button variant="outline" className="ml-2">Message</Button>
-              </div>
-            </div>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <Card className="p-4 text-center">
-                <ArrowUp className="h-5 w-5 mx-auto mb-1 text-orange-500" />
-                <p className="font-medium text-xl">{isKarmaLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : karma?.data?.link_karma || 0}</p>
-                <p className="text-xs text-muted-foreground">Post Karma</p>
-              </Card>
-              
-              <Card className="p-4 text-center">
-                <MessageSquare className="h-5 w-5 mx-auto mb-1 text-blue-500" />
-                <p className="font-medium text-xl">{isKarmaLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : karma?.data?.comment_karma || 0}</p>
-                <p className="text-xs text-muted-foreground">Comment Karma</p>
-              </Card>
-              
-              <Card className="p-4 text-center">
-                <Trophy className="h-5 w-5 mx-auto mb-1 text-yellow-500" />
-                <p className="font-medium text-xl">{isTrophiesLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : trophies?.data?.trophies?.length || 0}</p>
-                <p className="text-xs text-muted-foreground">Trophies</p>
-              </Card>
-              
-              <Card className="p-4 text-center">
-                <Users className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                <p className="font-medium text-xl">120</p>
-                <p className="text-xs text-muted-foreground">Followers</p>
-              </Card>
-            </div>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#DAE0E6]">
+        <Navbar />
+        <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
+          <div className="flex justify-center items-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </div>
-        
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <TabsList className="w-full max-w-md mx-auto grid grid-cols-4">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="comments">Comments</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="saved">Saved</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="mt-6">
-            {username ? (
-              <PostList userId={username} />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No posts found</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="comments">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Comments will appear here</p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="about">
-            <Card className="p-6">
-              <h3 className="font-semibold mb-4">Trophy Case</h3>
-              
-              {isTrophiesLoading ? (
-                <div className="flex gap-4 flex-wrap">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-24 w-24 rounded-md" />
-                  ))}
-                </div>
-              ) : trophies?.data?.trophies?.length ? (
-                <div className="flex gap-4 flex-wrap">
-                  {trophies.data.trophies.map((trophy: any, i: number) => (
-                    <div key={i} className="text-center">
-                      <div className="h-16 w-16 mx-auto bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center mb-2">
-                        <Trophy className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
-                      </div>
-                      <p className="text-xs font-medium">{trophy.name}</p>
+      </div>
+    );
+  }
+
+  if (isError || !profile) {
+    return (
+      <div className="min-h-screen bg-[#DAE0E6]">
+        <Navbar />
+        <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
+          <div className="text-center py-10">
+            <h1 className="text-2xl font-bold mb-4">User not found</h1>
+            <p className="text-muted-foreground mb-4">The user profile could not be loaded.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#DAE0E6]">
+      <Navbar />
+      
+      <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Main content */}
+          <div className="flex-1">
+            {/* User header */}
+            <Card className="bg-white mb-4 p-6 border border-border/60">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                <Avatar className="h-20 w-20 border-4 border-white shadow-md">
+                  <AvatarImage src={profile.profile_img} alt={username} />
+                  <AvatarFallback className="text-xl bg-reddit-orange text-white">
+                    {username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="text-center sm:text-left">
+                  <h1 className="text-2xl font-bold mb-1">{username}</h1>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center">
+                      <Trophy className="h-4 w-4 mr-1 text-yellow-500" />
+                      <span>{profile.post_karma || 0} Post Karma</span>
                     </div>
-                  ))}
+                    <div className="flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-1 text-blue-500" />
+                      <span>{profile.comment_karma || 0} Comment Karma</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CalendarDays className="h-4 w-4 mr-1" />
+                      <span>Joined {formatDate(profile.created || Date.now() / 1000)}</span>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No trophies yet</p>
-              )}
+                
+                <div className="ml-auto hidden sm:block">
+                  <Button 
+                    variant="outline" 
+                    className="bg-reddit-orange text-white hover:bg-reddit-orange/90"
+                    onClick={() => toast.info("Following feature not implemented yet")}
+                  >
+                    Follow
+                  </Button>
+                </div>
+              </div>
             </Card>
-          </TabsContent>
+            
+            {/* User content */}
+            <Card className="bg-white border border-border/60">
+              <Tabs defaultValue="posts">
+                <TabsList className="w-full justify-start p-0 h-12 border-b rounded-none gap-0">
+                  <TabsTrigger 
+                    value="posts" 
+                    className="flex-1 h-full data-[state=active]:border-b-2 data-[state=active]:border-reddit-orange rounded-none"
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Posts
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="comments" 
+                    className="flex-1 h-full data-[state=active]:border-b-2 data-[state=active]:border-reddit-orange rounded-none"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Comments
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="about" 
+                    className="flex-1 h-full data-[state=active]:border-b-2 data-[state=active]:border-reddit-orange rounded-none"
+                  >
+                    <Award className="h-4 w-4 mr-2" />
+                    About
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="posts" className="p-4">
+                  <div className="flex mb-4 border-b border-border/60">
+                    <button className="px-4 py-2 text-sm font-medium border-b-2 border-reddit-blue text-reddit-blue">
+                      <Fire className="h-4 w-4 inline mr-1" />
+                      Hot
+                    </button>
+                    <button className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground">
+                      <Clock className="h-4 w-4 inline mr-1" />
+                      New
+                    </button>
+                    <button className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground">
+                      <ArrowUp className="h-4 w-4 inline mr-1" />
+                      Top
+                    </button>
+                  </div>
+                  
+                  <PostList subreddit="" sort="hot" />
+                </TabsContent>
+                
+                <TabsContent value="comments" className="p-4">
+                  <p className="text-muted-foreground text-center py-8">
+                    User comments will appear here
+                  </p>
+                </TabsContent>
+                
+                <TabsContent value="about" className="p-4">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Trophy Case</h3>
+                      <div className="bg-secondary/50 rounded-md p-4 flex items-center gap-3">
+                        <Trophy className="h-6 w-6 text-yellow-500" />
+                        <div>
+                          <p className="font-medium">Verified Email</p>
+                          <p className="text-xs text-muted-foreground">User has a verified email address</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Reddit History</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Account Created</span>
+                          <span>{formatDate(profile.created || Date.now() / 1000)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </Card>
+          </div>
           
-          <TabsContent value="saved">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Saved items will appear here</p>
-            </div>
-          </TabsContent>
-        </Tabs>
+          {/* Sidebar */}
+          <div className="md:w-80 space-y-4">
+            <Card className="p-4 border border-border/60 bg-white">
+              <h2 className="text-base font-semibold mb-3">About u/{username}</h2>
+              <div className="text-sm text-muted-foreground">
+                {profile.description || "This user hasn't added a description yet."}
+              </div>
+            </Card>
+            
+            <Card className="p-4 border border-border/60 bg-white">
+              <h2 className="text-base font-semibold mb-3">Moderated Communities</h2>
+              <p className="text-sm text-muted-foreground">
+                This user doesn't moderate any communities.
+              </p>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
