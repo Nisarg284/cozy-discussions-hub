@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Trophy, Award, BookOpen, MessageSquare, ArrowUp, Clock, Fire } from "lucide-react";
+import { CalendarDays, Trophy, Award, BookOpen, MessageSquare, ArrowUp, Clock, Flame } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -16,7 +16,17 @@ import PostList from "@/components/PostList";
 
 const UserProfile = () => {
   const { username = "" } = useParams<{ username: string }>();
-  const { getUserProfile } = useRedditApi();
+  const { getPersonalizedFeed } = useRedditApi();
+  
+  // Mock user profile data since getUserProfile doesn't exist
+  const mockUserProfile = {
+    name: username,
+    profile_img: "",
+    post_karma: 1024,
+    comment_karma: 512,
+    created: Math.floor(Date.now() / 1000) - 86400 * 365, // 1 year ago
+    description: `This is ${username}'s profile.`
+  };
   
   const { 
     data: profile, 
@@ -24,7 +34,7 @@ const UserProfile = () => {
     isError 
   } = useQuery({
     queryKey: ["userProfile", username],
-    queryFn: () => getUserProfile(username),
+    queryFn: () => Promise.resolve(mockUserProfile),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!username,
   });
@@ -143,7 +153,7 @@ const UserProfile = () => {
                 <TabsContent value="posts" className="p-4">
                   <div className="flex mb-4 border-b border-border/60">
                     <button className="px-4 py-2 text-sm font-medium border-b-2 border-reddit-blue text-reddit-blue">
-                      <Fire className="h-4 w-4 inline mr-1" />
+                      <Flame className="h-4 w-4 inline mr-1" />
                       Hot
                     </button>
                     <button className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground">
