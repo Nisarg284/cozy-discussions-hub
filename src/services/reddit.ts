@@ -485,6 +485,214 @@ export const useRedditApi = () => {
     }
   };
 
+  const submitPost = async (
+    subreddit: string,
+    title: string,
+    content?: string,
+    url?: string,
+    kind: "self" | "link" | "image" = "self"
+  ): Promise<RedditPost> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to submit post");
+    }
+
+    try {
+      const params = new URLSearchParams({
+        sr: subreddit,
+        title,
+        kind,
+        ...(content && { text: content }),
+        ...(url && { url }),
+      });
+
+      const response = await fetchWithAuth("https://oauth.reddit.com/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Post submission failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        id: "placeholder",
+        title,
+        author: "currentUser",
+        subreddit,
+        created: Date.now() / 1000,
+        score: 1,
+        num_comments: 0,
+        url: "",
+        permalink: "",
+        selftext: content || "",
+        is_self: kind === "self",
+        thumbnail: "",
+        upvote_ratio: 1,
+        is_video: false,
+        liked: true,
+      };
+    } catch (error) {
+      console.error("Failed to submit post:", error);
+      throw error;
+    }
+  };
+
+  const submitComment = async (
+    postId: string,
+    body: string,
+    parentId?: string
+  ): Promise<RedditComment> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to submit comment");
+    }
+
+    try {
+      const params = new URLSearchParams({
+        api_type: "json",
+        thing_id: parentId ? parentId : `t3_${postId}`,
+        text: body,
+      });
+
+      const response = await fetchWithAuth("https://oauth.reddit.com/api/comment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Comment submission failed: ${response.status}`);
+      }
+
+      return {
+        id: "placeholder",
+        author: "currentUser",
+        body,
+        created: Date.now() / 1000,
+        score: 1,
+        permalink: "",
+        depth: parentId ? 1 : 0,
+        liked: true,
+      };
+    } catch (error) {
+      console.error("Failed to submit comment:", error);
+      throw error;
+    }
+  };
+
+  const createSubreddit = async (
+    name: string,
+    type: "public" | "restricted" | "private",
+    description?: string
+  ): Promise<Subreddit> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to create subreddit");
+    }
+
+    try {
+      const params = new URLSearchParams({
+        api_type: "json",
+        name,
+        type,
+        title: name,
+        ...(description && { public_description: description }),
+      });
+
+      const response = await fetchWithAuth("https://oauth.reddit.com/api/site_admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Subreddit creation failed: ${response.status}`);
+      }
+
+      return {
+        name: `t5_${name}`,
+        display_name: name,
+        subscribers: 1,
+        icon_img: "",
+        description: description,
+        user_is_subscriber: true,
+        public_description: description,
+      };
+    } catch (error) {
+      console.error("Failed to create subreddit:", error);
+      throw error;
+    }
+  };
+
+  const voteOnComment = async (
+    commentId: string,
+    direction: 1 | 0 | -1
+  ): Promise<void> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to vote");
+    }
+
+    try {
+      const response = await fetchWithAuth("https://oauth.reddit.com/api/vote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          id: `t1_${commentId}`,
+          dir: direction.toString(),
+        }).toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vote failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Vote failed:", error);
+      throw error;
+    }
+  };
+
+  const getModeratedSubreddits = async (): Promise<Subreddit[]> => {
+    if (!isAuthenticated) {
+      throw new Error("Authentication required to get moderated subreddits");
+    }
+    
+    try {
+      const response = await fetchWithAuth("https://oauth.reddit.com/subreddits/mine/moderator");
+      
+      if (!response.ok) {
+        throw new Error(`Reddit API error: ${response.status}`);
+      }
+      
+      const data: RedditApiResponse = await response.json();
+      
+      const subreddits = data.data.children.map(child => {
+        const subreddit = child.data;
+        return {
+          name: subreddit.name,
+          display_name: subreddit.display_name,
+          subscribers: subreddit.subscribers,
+          icon_img: subreddit.icon_img || '',
+          user_is_subscriber: true,
+          description: subreddit.public_description,
+        };
+      });
+      
+      return subreddits;
+    } catch (error) {
+      console.error("Failed to fetch moderated subreddits:", error);
+      throw error;
+    }
+  };
+
   return {
     getPosts,
     getPersonalizedFeed,
@@ -493,6 +701,11 @@ export const useRedditApi = () => {
     getSubreddits,
     getSubscribedSubreddits,
     subscribeToSubreddit,
-    searchVideos
+    searchVideos,
+    submitPost,
+    submitComment,
+    createSubreddit,
+    voteOnComment,
+    getModeratedSubreddits
   };
 };

@@ -14,6 +14,10 @@ import PostDetail from "./pages/PostDetail";
 import VideoSearchPage from "./pages/VideoSearchPage";
 import Explore from "./pages/Explore";
 import UserProfile from "./pages/UserProfile";
+import CreatePost from "./pages/CreatePost";
+import CreateSubreddit from "./pages/CreateSubreddit";
+import ModeratorPage from "./pages/ModeratorPage";
+import Messages from "./pages/Messages";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,6 +44,13 @@ const App = () => {
                 <Route path="/redirect" element={<Auth />} />
                 <Route path="/r/:subreddit" element={<Subreddit />} />
                 <Route path="/r/:subreddit/comments/:postId" element={<PostDetail />} />
+                <Route path="/submit" element={<CreatePost />} />
+                <Route path="/r/:subreddit/submit" element={<CreatePost />} />
+                <Route path="/subreddits/create" element={<CreateSubreddit />} />
+                <Route path="/mod/r/:subreddit" element={<ModeratorPage />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/messages/:view" element={<Messages />} />
+                <Route path="/messages/:view/:messageId" element={<Messages />} />
                 <Route path="/videos" element={<VideoSearchPage />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/user/:username" element={<UserProfile />} />

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -12,8 +11,8 @@ import { useAuth } from "@/context/AuthContext";
 import SubscribedSubreddits from "@/components/SubscribedSubreddits";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
+import CommentSubmission from "@/components/CommentSubmission";
 
-// Comment component to render a single comment and its replies
 const Comment = ({ 
   comment, 
   onVote 
@@ -25,7 +24,6 @@ const Comment = ({
   const [score, setScore] = useState(comment.score);
 
   const handleVote = (direction: 1 | 0 | -1) => {
-    // Calculate the new vote state
     let newVote: boolean | null;
     if (direction === 1) {
       newVote = vote === true ? null : true;
@@ -35,18 +33,15 @@ const Comment = ({
       newVote = null;
     }
     
-    // Calculate score change
     let scoreChange = 0;
     if (vote === true && newVote !== true) scoreChange--;
     if (vote === false && newVote !== false) scoreChange++;
     if (newVote === true && vote !== true) scoreChange++;
     if (newVote === false && vote !== false) scoreChange--;
     
-    // Update local state
     setVote(newVote);
     setScore(prevScore => prevScore + scoreChange);
     
-    // Call the parent handler
     onVote(comment.id, direction, vote);
   };
 
@@ -99,7 +94,6 @@ const Comment = ({
           </div>
         </div>
         
-        {/* Render nested replies */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="ml-4">
             {comment.replies.map(reply => (
@@ -117,7 +111,6 @@ const PostDetail = () => {
   const { isAuthenticated } = useAuth();
   const { getPosts, getComments, vote } = useRedditApi();
   
-  // Fetch post details
   const {
     data: post,
     isLoading: isLoadingPost,
@@ -133,10 +126,9 @@ const PostDetail = () => {
       return foundPost;
     },
     enabled: !!postId && !!subreddit,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
   
-  // Fetch comments
   const {
     data: comments,
     isLoading: isLoadingComments,
@@ -146,13 +138,12 @@ const PostDetail = () => {
     queryKey: ["comments", postId, subreddit],
     queryFn: () => getComments(postId || "", subreddit || ""),
     enabled: !!postId && !!subreddit,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
   
   const [postVote, setPostVote] = useState<boolean | null>(post?.liked || null);
   const [postScore, setPostScore] = useState<number>(post?.score || 0);
   
-  // Update local state when post data is loaded
   React.useEffect(() => {
     if (post) {
       setPostVote(post.liked);
@@ -168,7 +159,6 @@ const PostDetail = () => {
     
     if (!post) return;
     
-    // Calculate the new vote state
     let newVote: boolean | null;
     if (direction === 1) {
       newVote = postVote === true ? null : true;
@@ -178,14 +168,12 @@ const PostDetail = () => {
       newVote = null;
     }
     
-    // Calculate score change
     let scoreChange = 0;
     if (postVote === true && newVote !== true) scoreChange--;
     if (postVote === false && newVote !== false) scoreChange++;
     if (newVote === true && postVote !== true) scoreChange++;
     if (newVote === false && postVote !== false) scoreChange--;
     
-    // Update local state
     setPostVote(newVote);
     setPostScore(prevScore => prevScore + scoreChange);
     
@@ -195,7 +183,6 @@ const PostDetail = () => {
       console.error("Vote failed:", error);
       toast.error("Failed to register vote");
       
-      // Revert on error
       setPostVote(post.liked);
       setPostScore(post.score);
     }
@@ -207,8 +194,6 @@ const PostDetail = () => {
       return;
     }
     
-    // Comment voting logic would go here
-    // This would require additional API methods in the reddit service
     toast.info("Comment voting not implemented yet");
   };
   
@@ -217,12 +202,17 @@ const PostDetail = () => {
     toast.success("Link copied to clipboard");
   };
 
+  const handleCommentSubmitted = () => {
+    refetchComments();
+    toast.success("Comment posted successfully!");
+  };
+
   const isLoading = isLoadingPost || isLoadingComments;
   const isError = isPostError || isCommentsError;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#DAE0E6]">
+      <div className="min-h-screen bg-[#DAE0E6] dark:bg-background">
         <Navbar />
         <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
           <div className="flex justify-center items-center py-10">
@@ -235,7 +225,7 @@ const PostDetail = () => {
 
   if (isError || !post) {
     return (
-      <div className="min-h-screen bg-[#DAE0E6]">
+      <div className="min-h-screen bg-[#DAE0E6] dark:bg-background">
         <Navbar />
         <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
           <div className="text-center py-10">
@@ -249,16 +239,14 @@ const PostDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#DAE0E6]">
+    <div className="min-h-screen bg-[#DAE0E6] dark:bg-background">
       <Navbar />
       
       <div className="container max-w-5xl mx-auto pt-16 pb-10 px-4">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1">
-            {/* Post */}
-            <Card className="bg-white mb-4 border border-border/60 overflow-hidden">
+            <Card className="bg-card mb-4 border border-border/60 overflow-hidden">
               <div className="flex">
-                {/* Vote sidebar */}
                 <div className="bg-secondary/50 w-10 sm:w-12 flex flex-col items-center py-2">
                   <Button 
                     variant="ghost" 
@@ -282,7 +270,6 @@ const PostDetail = () => {
                 </div>
 
                 <div className="flex-1 p-4">
-                  {/* Post header */}
                   <div className="flex items-center text-xs text-muted-foreground mb-2">
                     <Link to={`/r/${post.subreddit}`} className="font-medium hover:underline">
                       r/{post.subreddit}
@@ -293,19 +280,16 @@ const PostDetail = () => {
                     <span>{formatDistanceToNow(new Date(post.created * 1000), { addSuffix: true })}</span>
                   </div>
 
-                  {/* Post title */}
                   <h1 className="text-xl font-semibold mb-3 text-balance">
                     {post.title}
                   </h1>
 
-                  {/* Post content */}
                   {post.is_self && post.selftext && (
                     <div className="prose prose-sm max-w-none mb-4">
                       <p>{post.selftext}</p>
                     </div>
                   )}
 
-                  {/* Post thumbnail - if available and not a self post */}
                   {!post.is_self && post.thumbnail && post.thumbnail.startsWith('http') && (
                     <div className="mb-4">
                       <a href={post.url} target="_blank" rel="noopener noreferrer">
@@ -319,7 +303,6 @@ const PostDetail = () => {
                     </div>
                   )}
 
-                  {/* Post actions */}
                   <div className="flex items-center space-x-4 mt-4">
                     <div className="flex items-center text-sm text-muted-foreground hover:text-foreground">
                       <MessageSquare size={16} className="mr-1" />
@@ -349,8 +332,15 @@ const PostDetail = () => {
               </div>
             </Card>
 
-            {/* Comments */}
-            <Card className="bg-white p-4 border border-border/60">
+            {post && (
+              <CommentSubmission 
+                postId={post.id} 
+                subreddit={post.subreddit}
+                onCommentSubmitted={handleCommentSubmitted}
+              />
+            )}
+
+            <Card className="bg-card p-4 border border-border/60">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold">{post.num_comments} Comments</h2>
                 <Button variant="outline" size="sm" onClick={() => refetchComments()}>
@@ -376,10 +366,8 @@ const PostDetail = () => {
             </Card>
           </div>
           
-          {/* Sidebar */}
           <div className="md:w-80 space-y-4">
-            {/* About Subreddit */}
-            <Card className="p-4 border border-border/60 bg-white">
+            <Card className="p-4 border border-border/60 bg-card">
               <h2 className="text-base font-semibold mb-2">About r/{post.subreddit}</h2>
               <Link 
                 to={`/r/${post.subreddit}`}
@@ -388,8 +376,11 @@ const PostDetail = () => {
                 Visit r/{post.subreddit}
               </Link>
               <div className="border-t border-border/60 pt-3 mt-3">
-                <Button className="w-full bg-reddit-orange hover:bg-reddit-orange/90 text-white">
-                  Create Post
+                <Button 
+                  className="w-full bg-reddit-orange hover:bg-reddit-orange/90 text-white"
+                  asChild
+                >
+                  <Link to={`/r/${post.subreddit}/submit`}>Create Post</Link>
                 </Button>
               </div>
             </Card>
