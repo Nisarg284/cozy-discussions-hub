@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogIn, LogOut, User, ChevronDown, Settings, HelpCircle } from "lucide-react";
+import { LogIn, LogOut, User, ChevronDown, Settings, HelpCircle, Shield, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -11,9 +11,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { getAuthUrl } from "@/services/reddit";
+import { motion } from "framer-motion";
 
 const AuthButton = () => {
   const { isAuthenticated, username, logout } = useAuth();
@@ -31,9 +33,9 @@ const AuthButton = () => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center space-x-2 h-9 px-2 hover:bg-secondary/80 rounded-md">
+          <Button variant="ghost" className="flex items-center space-x-2 h-9 px-2 hover:bg-secondary/80 dark:hover:bg-gray-800/80 rounded-md">
             <div className="flex items-center">
-              <Avatar className="h-8 w-8 border border-border">
+              <Avatar className="h-8 w-8 border border-border dark:border-gray-700">
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {username[0].toUpperCase()}
                 </AvatarFallback>
@@ -51,24 +53,30 @@ const AuthButton = () => {
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64 animate-scale-in">
+        <DropdownMenuContent align="end" className="w-64 animate-scale-in dark:bg-gray-800">
           <DropdownMenuLabel className="flex flex-col">
             <span className="text-xs text-muted-foreground">Logged in as</span>
             <span className="font-bold">{username}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>User Settings</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <HelpCircle className="mr-2 h-4 w-4" />
-            <span>Help Center</span>
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate(`/user/${username}`)}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Award className="mr-2 h-4 w-4" />
+              <span>Karma</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>User Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>Help Center</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive cursor-pointer"
@@ -83,14 +91,16 @@ const AuthButton = () => {
   }
 
   return (
-    <a
+    <motion.a
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       href="#"
       onClick={handleAuthClick}
       className="flex items-center space-x-2 rounded-full px-5 animate-fade-in bg-reddit-orange text-white hover:bg-reddit-orange/90 h-9 py-2 text-sm font-medium transition-colors"
     >
       <LogIn className="h-4 w-4" />
-      <span>Sign In</span>
-    </a>
+      <span>Sign In with Reddit</span>
+    </motion.a>
   );
 };
 

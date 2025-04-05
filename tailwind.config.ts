@@ -107,6 +107,14 @@ export default {
           "50%": { transform: "translateY(2px)" },
           "100%": { transform: "translateY(0)" },
         },
+        "switch-left": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-16px)" },
+        },
+        "switch-right": {
+          "0%": { transform: "translateX(-16px)" },
+          "100%": { transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,6 +124,8 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "vote-up": "vote-up 0.3s ease-out",
         "vote-down": "vote-down 0.3s ease-out",
+        "switch-left": "switch-left 0.3s ease-out",
+        "switch-right": "switch-right 0.3s ease-out",
       },
       fontFamily: {
         sans: [

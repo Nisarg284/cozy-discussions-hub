@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AuthButton from "./AuthButton";
 import { useAuth } from "@/context/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,15 +43,15 @@ const Navbar = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-subtle py-2"
-          : "bg-white py-2"
+          ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-subtle py-2"
+          : "bg-white dark:bg-gray-900 py-2"
       }`}
     >
       <div className="container max-w-6xl mx-auto px-4 flex items-center justify-between h-12">
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center space-x-2 text-reddit-blue"
+          className="flex items-center space-x-2 text-reddit-blue dark:text-blue-400"
         >
           <div className="w-8 h-8 rounded-full bg-reddit-orange text-white flex items-center justify-center font-bold">
             r
@@ -67,7 +68,7 @@ const Navbar = () => {
                 <ChevronDown size={16} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-56 dark:bg-gray-800">
               <DropdownMenuItem onSelect={() => navigate("/")}>Home</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => navigate("/explore")}>
                 <Compass className="mr-2 h-4 w-4" />
@@ -97,7 +98,7 @@ const Navbar = () => {
             />
             <Input
               placeholder="Search Reddit"
-              className="w-full pl-10 pr-4 h-9 rounded-full bg-secondary/50 border-none focus:ring-1 focus:ring-primary/20 transition-all"
+              className="w-full pl-10 pr-4 h-9 rounded-full bg-secondary/50 border-none focus:ring-1 focus:ring-primary/20 transition-all dark:bg-gray-800/50"
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
             />
@@ -105,13 +106,15 @@ const Navbar = () => {
         </form>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center space-x-2">
-          <Link to="/explore" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80">
+        <div className="hidden md:flex items-center space-x-3">
+          <ThemeToggle />
+          
+          <Link to="/explore" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80 dark:hover:bg-gray-800">
             <Compass size={18} />
             <span className="hidden lg:inline">Explore</span>
           </Link>
           
-          <Link to="/videos" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80">
+          <Link to="/videos" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80 dark:hover:bg-gray-800">
             <Film size={18} />
             <span className="hidden lg:inline">Videos</span>
           </Link>
@@ -142,21 +145,24 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-background z-50 animate-fade-in">
+          <div className="fixed inset-0 bg-background dark:bg-gray-900 z-50 animate-fade-in">
             <div className="flex flex-col h-full">
-              <div className="flex justify-between items-center p-4 border-b">
+              <div className="flex justify-between items-center p-4 border-b dark:border-gray-800">
                 <Link to="/" className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-full bg-reddit-orange text-white flex items-center justify-center font-bold">
                     r
                   </div>
                   <span className="text-xl font-semibold">reddit</span>
                 </Link>
-                <button
-                  className="p-2 rounded-full hover:bg-secondary"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-4">
+                  <ThemeToggle />
+                  <button
+                    className="p-2 rounded-full hover:bg-secondary dark:hover:bg-gray-800"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
               
               <div className="flex-1 overflow-auto p-4">
@@ -167,7 +173,7 @@ const Navbar = () => {
                   
                   <Link 
                     to="/explore" 
-                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 text-primary font-medium"
+                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 dark:bg-gray-800/50 text-primary dark:text-white font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Compass className="mr-3" size={20} />
@@ -176,7 +182,7 @@ const Navbar = () => {
                   
                   <Link 
                     to="/videos" 
-                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 text-primary font-medium"
+                    className="flex items-center py-3 px-4 rounded-md bg-secondary/50 dark:bg-gray-800/50 text-primary dark:text-white font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Film className="mr-3" size={20} />
@@ -184,7 +190,7 @@ const Navbar = () => {
                   </Link>
                   
                   {isAuthenticated && (
-                    <div className="space-y-2 pt-4 border-t">
+                    <div className="space-y-2 pt-4 border-t dark:border-gray-800">
                       <Button variant="ghost" className="w-full justify-start">
                         <Sparkles className="mr-2" size={18} />
                         Popular
