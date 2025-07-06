@@ -53,7 +53,7 @@ const CommentSubmission: React.FC<CommentSubmissionProps> = ({
   };
 
   const getInitials = () => {
-    return user?.username?.substring(0, 2).toUpperCase() || "?";
+    return user?.name?.substring(0, 2).toUpperCase() || "?";
   };
 
   if (!isAuthenticated) {

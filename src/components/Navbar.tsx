@@ -74,15 +74,15 @@ const Navbar = () => {
                 <Compass className="mr-2 h-4 w-4" />
                 Explore
               </DropdownMenuItem>
-              <DropdownMenuItem>Popular</DropdownMenuItem>
-              <DropdownMenuItem>All</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate("/?sort=popular")}>Popular</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate("/?sort=all")}>All</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => navigate("/videos")}>
                 <Film className="mr-2 h-4 w-4" />
                 Videos
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Create Community</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate("/subreddits/create")}>Create Community</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -124,7 +124,12 @@ const Navbar = () => {
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
                 <Sparkles size={20} />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-9 w-9"
+                onClick={() => navigate("/submit")}
+              >
                 <Plus size={20} />
               </Button>
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
@@ -191,21 +196,49 @@ const Navbar = () => {
                   
                   {isAuthenticated && (
                     <div className="space-y-2 pt-4 border-t dark:border-gray-800">
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate("/?sort=popular");
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
                         <Sparkles className="mr-2" size={18} />
                         Popular
                       </Button>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate("/submit");
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
                         <Plus className="mr-2" size={18} />
                         Create Post
                       </Button>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate("/messages");
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
                         <Bell className="mr-2" size={18} />
-                        Notifications
+                        Messages
                       </Button>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate("/video-call");
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
                         <Users className="mr-2" size={18} />
-                        Friends
+                        Video Call
                       </Button>
                     </div>
                   )}

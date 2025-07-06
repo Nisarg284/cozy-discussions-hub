@@ -18,6 +18,7 @@ import CreatePost from "./pages/CreatePost";
 import CreateSubreddit from "./pages/CreateSubreddit";
 import ModeratorPage from "./pages/ModeratorPage";
 import Messages from "./pages/Messages";
+import VideoCall from "./pages/VideoCall";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -52,6 +53,7 @@ const App = () => {
                 <Route path="/messages/:view" element={<Messages />} />
                 <Route path="/messages/:view/:messageId" element={<Messages />} />
                 <Route path="/videos" element={<VideoSearchPage />} />
+                <Route path="/video-call" element={<VideoCall />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/user/:username" element={<UserProfile />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
