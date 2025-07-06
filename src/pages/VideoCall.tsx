@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
+import { io, Socket } from "socket.io-client";
 
 const VideoCall = () => {
   const navigate = useNavigate();
@@ -21,16 +22,125 @@ const VideoCall = () => {
   const [roomId, setRoomId] = useState("");
   const [isHost, setIsHost] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
+  const [isConnecting, setIsConnecting] = useState(false);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/auth");
       return;
     }
+    
+    // Initialize WebRTC configuration
+    initializeWebRTC();
+    
+    return () => {
+      cleanup();
+    };
   }, [isAuthenticated, navigate]);
+
+  const initializeWebRTC = () => {
+    // Connect to signaling server
+    socketRef.current = io('wss://socketio-chat-h9jt.herokuapp.com/');
+    
+    socketRef.current.on('user-joined', (data) => {
+      toast.info(`${data.name} joined the call`);
+      setParticipants(prev => [...prev, data.name]);
+    });
+    
+    socketRef.current.on('user-left', (data) => {
+      toast.info(`${data.name} left the call`);
+      setParticipants(prev => prev.filter(p => p !== data.name));
+    });
+    
+    socketRef.current.on('offer', handleOffer);
+    socketRef.current.on('answer', handleAnswer);
+    socketRef.current.on('ice-candidate', handleIceCandidate);
+  };
+
+  const cleanup = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+    }
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+  };
+
+  const createPeerConnection = () => {
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+    
+    const peerConnection = new RTCPeerConnection(configuration);
+    
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate && socketRef.current) {
+        socketRef.current.emit('ice-candidate', {
+          roomId,
+          candidate: event.candidate
+        });
+      }
+    };
+    
+    peerConnection.ontrack = (event) => {
+      remoteStreamRef.current = event.streams[0];
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+      setParticipants(prev => prev.length < 2 ? [...prev, "Remote User"] : prev);
+    };
+    
+    return peerConnection;
+  };
+
+  const handleOffer = async (data: any) => {
+    if (!peerConnectionRef.current) {
+      peerConnectionRef.current = createPeerConnection();
+    }
+    
+    await peerConnectionRef.current.setRemoteDescription(data.offer);
+    
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        peerConnectionRef.current!.addTrack(track, localStreamRef.current!);
+      });
+    }
+    
+    const answer = await peerConnectionRef.current.createAnswer();
+    await peerConnectionRef.current.setLocalDescription(answer);
+    
+    if (socketRef.current) {
+      socketRef.current.emit('answer', {
+        roomId: data.roomId,
+        answer
+      });
+    }
+  };
+
+  const handleAnswer = async (data: any) => {
+    if (peerConnectionRef.current) {
+      await peerConnectionRef.current.setRemoteDescription(data.answer);
+    }
+  };
+
+  const handleIceCandidate = async (data: any) => {
+    if (peerConnectionRef.current) {
+      await peerConnectionRef.current.addIceCandidate(data.candidate);
+    }
+  };
 
   const startLocalVideo = async () => {
     try {
@@ -56,12 +166,21 @@ const VideoCall = () => {
     const newRoomId = Math.random().toString(36).substr(2, 9);
     setRoomId(newRoomId);
     setIsHost(true);
-    setIsInCall(true);
+    setIsConnecting(true);
     
     const stream = await startLocalVideo();
-    if (stream) {
+    if (stream && socketRef.current) {
+      socketRef.current.emit('join-room', {
+        roomId: newRoomId,
+        name: 'Host'
+      });
+      
+      setIsInCall(true);
+      setIsConnecting(false);
       setParticipants(["You (Host)"]);
       toast.success("Video call room created!");
+    } else {
+      setIsConnecting(false);
     }
   };
 
@@ -71,11 +190,35 @@ const VideoCall = () => {
       return;
     }
     
-    setIsInCall(true);
+    setIsConnecting(true);
     const stream = await startLocalVideo();
-    if (stream) {
-      setParticipants(["You", "Host"]);
+    if (stream && socketRef.current) {
+      socketRef.current.emit('join-room', {
+        roomId,
+        name: 'User'
+      });
+      
+      // Create peer connection and make offer
+      peerConnectionRef.current = createPeerConnection();
+      
+      stream.getTracks().forEach(track => {
+        peerConnectionRef.current!.addTrack(track, stream);
+      });
+      
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
+      
+      socketRef.current.emit('offer', {
+        roomId,
+        offer
+      });
+      
+      setIsInCall(true);
+      setIsConnecting(false);
+      setParticipants(["You"]);
       toast.success("Joined video call!");
+    } else {
+      setIsConnecting(false);
     }
   };
 
@@ -84,10 +227,24 @@ const VideoCall = () => {
       localStreamRef.current.getTracks().forEach(track => track.stop());
     }
     
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    
+    if (socketRef.current) {
+      socketRef.current.emit('leave-room', { roomId });
+    }
+    
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+    
     setIsInCall(false);
     setRoomId("");
     setIsHost(false);
     setParticipants([]);
+    remoteStreamRef.current = null;
     toast.info("Left the call");
   };
 
@@ -145,9 +302,14 @@ const VideoCall = () => {
                 <CardTitle className="text-center">Start a Video Call</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button onClick={createRoom} className="w-full" size="lg">
+                <Button 
+                  onClick={createRoom} 
+                  className="w-full" 
+                  size="lg"
+                  disabled={isConnecting}
+                >
                   <Video className="mr-2 h-5 w-5" />
-                  Create New Room
+                  {isConnecting ? "Creating..." : "Create New Room"}
                 </Button>
                 
                 <div className="relative">
@@ -165,9 +327,15 @@ const VideoCall = () => {
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                   />
-                  <Button onClick={joinRoom} variant="outline" className="w-full" size="lg">
+                  <Button 
+                    onClick={joinRoom} 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    disabled={isConnecting}
+                  >
                     <Users className="mr-2 h-5 w-5" />
-                    Join Room
+                    {isConnecting ? "Joining..." : "Join Room"}
                   </Button>
                 </div>
               </CardContent>
@@ -227,18 +395,33 @@ const VideoCall = () => {
                 </CardContent>
               </Card>
 
-              {participants.length > 1 && (
-                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="aspect-video bg-gray-800 flex items-center justify-center">
-                      <div className="text-center">
-                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-400">Waiting for participants...</p>
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="aspect-video bg-gray-800 relative">
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                    {!remoteStreamRef.current && (
+                      <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                        <div className="text-center">
+                          <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-400">
+                            {participants.length > 1 ? "Connecting..." : "Waiting for participants..."}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    )}
+                    {remoteStreamRef.current && (
+                      <div className="absolute bottom-3 left-3">
+                        <Badge variant="secondary">Remote User</Badge>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Call Controls */}
