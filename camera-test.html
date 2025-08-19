@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera and Microphone Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        video { width: 100%; background: #000; }
+        .controls { margin-top: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; }
+        .status { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .log { margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Camera and Microphone Test</h1>
+    <p>This page tests if your browser can access your camera and microphone.</p>
+    
+    <video id="video" autoplay playsinline></video>
+    
+    <div class="controls">
+        <button id="startButton">Start Camera & Mic</button>
+        <button id="stopButton" disabled>Stop</button>
+    </div>
+    
+    <div id="status" class="status"></div>
+    
+    <div class="log" id="log">
+        <strong>Log:</strong><br>
+    </div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        
+        let stream = null;
+        
+        function addLog(message) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString();
+            log.innerHTML += `${timestamp}: ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        startButton.addEventListener('click', async () => {
+            try {
+                addLog('Requesting camera and microphone access...');
+                
+                // Check if mediaDevices API is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('MediaDevices API not supported in this browser');
+                }
+                
+                const constraints = {
+                    video: true,
+                    audio: true
+                };
+                
+                addLog('Using constraints: ' + JSON.stringify(constraints));
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+                
+                addLog(`Got ${videoTracks.length} video tracks and ${audioTracks.length} audio tracks`);
+                
+                if (videoTracks.length > 0) {
+                    addLog('Using video device: ' + videoTracks[0].label);
+                }
+                
+                if (audioTracks.length > 0) {
+                    addLog('Using audio device: ' + audioTracks[0].label);
+                }
+                
+                video.srcObject = stream;
+                
+                status.className = 'status success';
+                status.textContent = 'Success! Camera and microphone are working.';
+                
+                startButton.disabled = true;
+                stopButton.disabled = false;
+            } catch (error) {
+                addLog('Error: ' + error.message);
+                addLog('Error name: ' + error.name);
+                
+                status.className = 'status error';
+                
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    status.textContent = 'Camera or microphone access denied. Please allow access in your browser settings.';
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    status.textContent = 'No camera or microphone found. Please connect a device and try again.';
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    status.textContent = 'Could not access your camera or microphone. It may be in use by another application.';
+                } else if (error.name === 'OverconstrainedError') {
+                    status.textContent = 'Your camera does not meet the required constraints.';
+                } else if (error.name === 'TypeError') {
+                    status.textContent = 'Invalid media constraints specified.';
+                } else {
+                    status.textContent = 'Error accessing camera or microphone: ' + error.message;
+                }
+            }
+        });
+        
+        stopButton.addEventListener('click', () => {
+            if (stream) {
+                addLog('Stopping all tracks...');
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    addLog(`Stopped ${track.kind} track`);
+                });
+                video.srcObject = null;
+                stream = null;
+                
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                
+                status.className = 'status';
+                status.textContent = 'Camera and microphone stopped.';
+            }
+        });
+        
+        // Log browser information
+        addLog('Browser: ' + navigator.userAgent);
+        if (navigator.mediaDevices) {
+            addLog('MediaDevices API is available');
+            
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    const audioDevices = devices.filter(device => device.kind === 'audioinput');
+                    
+                    addLog(`Found ${videoDevices.length} video input devices`);
+                    addLog(`Found ${audioDevices.length} audio input devices`);
+                    
+                    videoDevices.forEach((device, index) => {
+                        addLog(`Video device ${index + 1}: ${device.label || 'Label not available'}`);
+                    });
+                    
+                    audioDevices.forEach((device, index) => {
+                        addLog(`Audio device ${index + 1}: ${device.label || 'Label not available'}`);
+                    });
+                })
+                .catch(err => {
+                    addLog('Error enumerating devices: ' + err);
+                });
+        } else {
+            addLog('MediaDevices API is NOT available');
+        }
+    </script>
+</body>
+</html>
