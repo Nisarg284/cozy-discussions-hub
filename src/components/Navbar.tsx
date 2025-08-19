@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Menu, Search, X, Bell, Plus, Sparkles, ChevronDown, 
-  Film, Compass, Users
+  Film, Compass, Users, Video
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -117,6 +117,11 @@ const Navbar = () => {
           <Link to="/videos" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80 dark:hover:bg-gray-800">
             <Film size={18} />
             <span className="hidden lg:inline">Videos</span>
+          </Link>
+          
+          <Link to="/video-call" className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md hover:bg-secondary/80 dark:hover:bg-gray-800">
+            <Video size={18} />
+            <span className="hidden lg:inline">Video Call</span>
           </Link>
           
           {isAuthenticated && (
